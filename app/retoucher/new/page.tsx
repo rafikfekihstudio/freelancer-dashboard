@@ -5,6 +5,7 @@ import { users } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
 import { listWorkTypes, distinctEditingTypes } from "@/lib/actions/work-types"
 import { WorkForm } from "./work-form"
+import DashboardShell from "@/components/dashboard-shell"
 
 export default async function NewWorkPage({
   searchParams,
@@ -27,9 +28,11 @@ export default async function NewWorkPage({
   const allTypes = types.map((t) => t.name)
 
   return (
-    <div className="space-y-6">
+    <DashboardShell>
+      <div className="space-y-6">
       <h1 className="text-3xl font-semibold">New Work Entry</h1>
       <WorkForm hirers={hirers} workTypes={allTypes} defaultFolder={folder} />
     </div>
+    </DashboardShell>
   )
 }

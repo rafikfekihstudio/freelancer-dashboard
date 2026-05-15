@@ -5,6 +5,7 @@ import { workEntries, users } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
 import { listWorkTypes } from "@/lib/actions/work-types"
 import { EditWorkForm } from "./edit-work-form"
+import DashboardShell from "@/components/dashboard-shell"
 
 export default async function EditWorkPage({
   params,
@@ -22,7 +23,7 @@ export default async function EditWorkPage({
     .get()
 
   if (!entry || entry.retoucherId !== Number(session.user.id)) {
-    return <p className="text-muted-foreground">Not found.</p>
+    return <DashboardShell><p className="text-muted-foreground">Not found.</p></DashboardShell>
   }
 
   const [hirers, types] = await Promise.all([
@@ -36,9 +37,11 @@ export default async function EditWorkPage({
   const allTypes = types.map((t) => t.name)
 
   return (
-    <div className="space-y-6">
+    <DashboardShell>
+      <div className="space-y-6">
       <h1 className="text-3xl font-semibold">Edit Work Entry</h1>
       <EditWorkForm entry={entry} hirers={hirers} workTypes={allTypes} />
     </div>
+    </DashboardShell>
   )
 }

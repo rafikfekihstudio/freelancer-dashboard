@@ -5,6 +5,7 @@ import { workEntries, payments } from "@/lib/db/schema"
 import { eq, sql } from "drizzle-orm"
 import { CsvDownloadButton } from "@/components/csv-download"
 import { exportPaymentsCsv } from "@/lib/actions/export"
+import DashboardShell from "@/components/dashboard-shell"
 
 export default async function RetoucherFinancePage() {
   const session = await auth()
@@ -40,7 +41,8 @@ export default async function RetoucherFinancePage() {
     .all()
 
   return (
-    <div className="space-y-8">
+    <DashboardShell>
+      <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-semibold">Finance</h1>
         <CsvDownloadButton label="Download CSV" fetchCsv={exportPaymentsCsv} filename="payments.csv" />
@@ -88,5 +90,6 @@ export default async function RetoucherFinancePage() {
         </div>
       </section>
     </div>
+    </DashboardShell>
   )
 }

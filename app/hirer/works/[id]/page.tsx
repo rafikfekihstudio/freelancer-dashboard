@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import { workEntries, comments, users } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
 import { CommentSection } from "@/components/works/comment-section"
+import DashboardShell from "@/components/dashboard-shell"
 
 export default async function HirerWorkPage({
   params,
@@ -33,7 +34,7 @@ export default async function HirerWorkPage({
     .get()
 
   if (!entry) {
-    return <p className="text-muted-foreground">Work entry not found.</p>
+    return <DashboardShell><p className="text-muted-foreground">Work entry not found.</p></DashboardShell>
   }
 
   const allComments = await db
@@ -49,7 +50,8 @@ export default async function HirerWorkPage({
     .all()
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <DashboardShell>
+      <div className="max-w-2xl space-y-6">
       <h1 className="text-3xl font-semibold">{entry.title}</h1>
 
       {entry.imagePath && (
@@ -87,5 +89,6 @@ export default async function HirerWorkPage({
 
       <CommentSection workEntryId={entry.id} comments={allComments} currentUserId={session.user.id} />
     </div>
+    </DashboardShell>
   )
 }

@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm"
 import { StatusToggle } from "./status-toggle"
 import { CommentSection } from "@/components/works/comment-section"
 import { PaymentForm } from "@/components/works/payment-form"
+import DashboardShell from "@/components/dashboard-shell"
 
 export default async function RetoucherWorkPage({
   params,
@@ -37,7 +38,7 @@ export default async function RetoucherWorkPage({
     .get()
 
   if (!entry) {
-    return <p className="text-muted-foreground">Work entry not found.</p>
+    return <DashboardShell><p className="text-muted-foreground">Work entry not found.</p></DashboardShell>
   }
 
   const hirer = entry.hirerId
@@ -63,7 +64,8 @@ export default async function RetoucherWorkPage({
     .all()
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <DashboardShell>
+      <div className="max-w-2xl space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-semibold">{entry.title}</h1>
         <Link
@@ -145,5 +147,6 @@ export default async function RetoucherWorkPage({
         currentUserId={session.user.id}
       />
     </div>
+    </DashboardShell>
   )
 }

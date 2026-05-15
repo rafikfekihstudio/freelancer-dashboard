@@ -17,7 +17,6 @@
     "@auth/core": "^0.34.3",
     "@libsql/client": "^0.17.3",
     "bcryptjs": "latest",
-
     "class-variance-authority": "latest",
     "clsx": "latest",
     "drizzle-orm": "latest",
@@ -32,7 +31,6 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "latest",
-    "@types/bcryptjs": "latest",
     "@types/node": "latest",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

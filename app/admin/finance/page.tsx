@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
 import { workEntries, users, payments } from "@/lib/db/schema"
 import { eq, sql } from "drizzle-orm"
+import DashboardShell from "@/components/dashboard-shell"
 
 export default async function AdminFinancePage() {
   const session = await auth()
@@ -34,7 +35,8 @@ export default async function AdminFinancePage() {
     .all()
 
   return (
-    <div className="space-y-8">
+    <DashboardShell>
+      <div className="space-y-8">
       <h1 className="text-3xl font-semibold">Finance Overview</h1>
 
       <section>
@@ -93,5 +95,6 @@ export default async function AdminFinancePage() {
         </div>
       </section>
     </div>
+    </DashboardShell>
   )
 }

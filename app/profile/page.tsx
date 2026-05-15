@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { Avatar } from "@/components/ui/avatar"
 import { AvatarForm } from "./avatar-form"
+import DashboardShell from "@/components/dashboard-shell"
 
 export default async function ProfilePage() {
   const session = await auth()
@@ -10,7 +11,8 @@ export default async function ProfilePage() {
   const { user } = session
 
   return (
-    <div className="max-w-lg space-y-6">
+    <DashboardShell>
+      <div className="max-w-lg space-y-6">
       <h1 className="text-3xl font-semibold">Profile</h1>
 
       <div className="flex items-center gap-4">
@@ -27,5 +29,6 @@ export default async function ProfilePage() {
         <AvatarForm />
       </div>
     </div>
+    </DashboardShell>
   )
 }

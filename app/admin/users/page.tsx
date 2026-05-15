@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
 import { users } from "@/lib/db/schema"
 import { DeleteUserButton } from "@/components/delete-user-button"
+import DashboardShell from "@/components/dashboard-shell"
 
 export default async function UsersPage() {
   const session = await auth()
@@ -12,7 +13,8 @@ export default async function UsersPage() {
   const allUsers = await db.select().from(users).all()
 
   return (
-    <div className="space-y-6">
+    <DashboardShell>
+      <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-semibold">Users</h1>
         <Link href="/admin/users/new" className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors">
@@ -47,5 +49,6 @@ export default async function UsersPage() {
         {allUsers.length === 0 && <p className="px-4 py-8 text-center text-muted-foreground">No users yet.</p>}
       </div>
     </div>
+    </DashboardShell>
   )
 }

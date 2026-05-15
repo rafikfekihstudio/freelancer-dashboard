@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
 import { users, workEntries, payments } from "@/lib/db/schema"
 import { sql } from "drizzle-orm"
+import DashboardShell from "@/components/dashboard-shell"
 
 export default async function AdminPage() {
   const session = await auth()
@@ -20,7 +21,8 @@ export default async function AdminPage() {
     .get())?.total ?? 0
 
   return (
-    <div className="space-y-6">
+    <DashboardShell>
+      <div className="space-y-6">
       <h1 className="text-3xl font-semibold">Admin Overview</h1>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-lg border p-6">
@@ -41,5 +43,6 @@ export default async function AdminPage() {
         </div>
       </div>
     </div>
+    </DashboardShell>
   )
 }

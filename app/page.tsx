@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 
-export default async function Home() {
+export default async function DashboardHome() {
   const session = await auth()
   if (!session) redirect("/login")
 
@@ -9,6 +9,5 @@ export default async function Home() {
   if (role === "admin") redirect("/admin")
   if (role === "retoucher") redirect("/retoucher")
   if (role === "hirer") redirect("/hirer")
-
   redirect("/login")
 }
