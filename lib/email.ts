@@ -26,7 +26,7 @@ export async function sendWelcomeEmail({
     subject: `Welcome to ${process.env.SITE_NAME || "Retoucher Dashboard"}`,
     html: `<p>Hi ${name},</p>
 <p>You've been invited to <strong>${process.env.SITE_NAME || "Retoucher Dashboard"}</strong>.</p>
-<p>Sign in at <a href="${process.env.NEXTAUTH_URL || "http://localhost:3001"}">${process.env.NEXTAUTH_URL || "http://localhost:3001"}</a></p>
+<p>Sign in at <a href="${process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3001"}">${process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3001"}</a></p>
 <p><strong>Email:</strong> ${email}<br><strong>Password:</strong> ${password}</p>
 <p>Please change your password after logging in.</p>`,
   })
