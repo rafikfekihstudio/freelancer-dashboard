@@ -56,6 +56,7 @@ export const notifications = sqliteTable("notifications", {
     .notNull()
     .references(() => users.id),
   message: text("message").notNull(),
+  link: text("link"),
   read: integer("read", { mode: "boolean" }).notNull().default(false),
   createdAt: text("created_at").default("datetime('now')"),
 })

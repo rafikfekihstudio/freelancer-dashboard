@@ -3,11 +3,12 @@
 import { z } from "zod"
 import { revalidatePath } from "next/cache"
 import { db } from "@/lib/db"
-import { workEntries, payments, comments, notifications, users, folderNotes } from "@/lib/db/schema"
+import { workEntries, payments, comments, users, folderNotes } from "@/lib/db/schema"
 import { auth } from "@/lib/auth"
 import { eq, and } from "drizzle-orm"
 import { uploadImage } from "@/lib/upload"
 import { ensureWorkType } from "./work-types"
+import { createNotification } from "./notifications"
 
 const createSchema = z.object({
   title: z.string().min(1),
@@ -64,6 +65,14 @@ export async function createWorkAction(
       imagePath,
     })
     .run()
+
+  if (parsed.data.hirerId) {
+    await createNotification({
+      userId: parsed.data.hirerId,
+      message: `${session.user.name} assigned "${parsed.data.title}" to you`,
+      link: `/hirer`,
+    })
+  }
 
   revalidatePath("/retoucher")
   return { ok: true }
@@ -124,6 +133,15 @@ export async function updateWorkAction(
     .where(eq(workEntries.id, id))
     .run()
 
+  const targetHirer = hirerId ? Number(hirerId) : entry.hirerId
+  if (targetHirer) {
+    await createNotification({
+      userId: targetHirer,
+      message: `${session.user.name} updated "${title || entry.title}"`,
+      link: `/hirer`,
+    })
+  }
+
   revalidatePath("/retoucher")
   revalidatePath(`/retoucher/works/${id}`)
   return { ok: true }
@@ -153,12 +171,11 @@ export async function deleteWorkAction(formData: FormData) {
     const fiveMin = 5 * 60 * 1000
     if (now - created > fiveMin) {
       const retoucher = await db.select().from(users).where(eq(users.id, entry.retoucherId)).get()
-      await db.insert(notifications)
-        .values({
-          userId: entry.hirerId,
-          message: `${retoucher?.name ?? "A retoucher"} removed "${entry.title}"`,
-        })
-        .run()
+      await createNotification({
+        userId: entry.hirerId,
+        message: `${retoucher?.name ?? "A retoucher"} removed "${entry.title}"`,
+        link: `/hirer`,
+      })
     }
   }
 
@@ -200,6 +217,16 @@ export async function updateWorkStatusAction(
     .set({ status: status as "in-progress" | "completed", updatedAt: new Date().toISOString() })
     .where(eq(workEntries.id, id))
     .run()
+
+  const changerName = session.user.name
+  const targetUserId = entry.hirerId === uid ? entry.retoucherId : entry.hirerId
+  if (targetUserId) {
+    await createNotification({
+      userId: targetUserId,
+      message: `${changerName} marked "${entry.title}" as ${status}`,
+      link: `/hirer/works/${id}`,
+    })
+  }
 
   revalidatePath(`/retoucher/works/${id}`)
   revalidatePath(`/hirer/works/${id}`)

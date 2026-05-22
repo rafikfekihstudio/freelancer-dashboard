@@ -6,6 +6,7 @@ import { db } from "@/lib/db"
 import { payments, workEntries } from "@/lib/db/schema"
 import { auth } from "@/lib/auth"
 import { eq, sql } from "drizzle-orm"
+import { createNotification } from "./notifications"
 
 const createPaymentSchema = z.object({
   workEntryId: z.coerce.number(),
@@ -66,6 +67,14 @@ export async function recordPaymentAction(
     .set({ amountPaid: total, paymentStatus })
     .where(eq(workEntries.id, parsed.data.workEntryId))
     .run()
+
+  if (entry.hirerId) {
+    await createNotification({
+      userId: entry.hirerId,
+      message: `${session.user.name} recorded a $${parsed.data.amount.toFixed(2)} payment for "${entry.title}" (${paymentStatus})`,
+      link: `/hirer`,
+    })
+  }
 
   revalidatePath("/retoucher")
   revalidatePath(`/retoucher/works/${parsed.data.workEntryId}`)
