@@ -7,11 +7,15 @@ export function WorkHoverCard({
   imageSrc,
   editingType,
   expectedDelivery,
+  retoucherName,
+  hirerName,
 }: {
   children: React.ReactNode
   imageSrc?: string | null
   editingType: string
   expectedDelivery: string
+  retoucherName?: string | null
+  hirerName?: string | null
 }) {
   const [show, setShow] = useState(false)
 
@@ -32,6 +36,8 @@ export function WorkHoverCard({
           <div className="space-y-1 text-xs">
             <p><span className="text-muted-foreground">Type:</span> {editingType}</p>
             <p><span className="text-muted-foreground">Delivery:</span> {expectedDelivery}</p>
+            {retoucherName && <p className="text-muted-foreground">Retouched by <span className="text-foreground">{retoucherName}</span></p>}
+            {hirerName && <p className="text-muted-foreground">Retouching for <span className="text-foreground">{hirerName}</span></p>}
           </div>
         </div>
       )}
