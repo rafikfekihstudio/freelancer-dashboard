@@ -25,57 +25,62 @@ export async function createWorkAction(
   _prev: { error?: string; ok?: boolean } | null,
   formData: FormData
 ): Promise<{ error?: string; ok?: boolean } | null> {
-  const session = await auth()
-  if (!session || session.user.role !== "retoucher") {
-    return { error: "Unauthorized" }
+  try {
+    const session = await auth()
+    if (!session || session.user.role !== "retoucher") {
+      return { error: "Unauthorized" }
+    }
+
+    const raw: Record<string, unknown> = {
+      title: formData.get("title"),
+      originalFilename: formData.get("originalFilename"),
+      editingType: formData.get("editingType"),
+      price: formData.get("price"),
+      expectedDelivery: formData.get("expectedDelivery"),
+    }
+
+    const hirerId = formData.get("hirerId")
+    if (hirerId)   raw.hirerId = hirerId
+    const folder = formData.get("folder")
+    if (folder) raw.folder = folder
+    const privateNotes = formData.get("privateNotes")
+    if (privateNotes) raw.privateNotes = privateNotes
+
+    const parsed = createSchema.safeParse(raw)
+    if (!parsed.success) {
+      return { error: "Invalid input" }
+    }
+
+    let imagePath: string | null = null
+    const imageFile = formData.get("image") as File | null
+    if (imageFile && imageFile.size > 0) {
+      imagePath = await uploadImage(imageFile)
+    }
+
+    await ensureWorkType(parsed.data.editingType)
+
+    await db.insert(workEntries)
+      .values({
+        ...parsed.data,
+        retoucherId: Number(session.user.id),
+        imagePath,
+      })
+      .run()
+
+    if (parsed.data.hirerId) {
+      await createNotification({
+        userId: parsed.data.hirerId,
+        message: `${session.user.name} added "${parsed.data.title}" for you`,
+        link: `/hirer`,
+      })
+    }
+
+    revalidatePath("/retoucher")
+    return { ok: true }
+  } catch (e) {
+    console.error("[createWorkAction]", e)
+    return { error: "Something went wrong. Please try again." }
   }
-
-  const raw: Record<string, unknown> = {
-    title: formData.get("title"),
-    originalFilename: formData.get("originalFilename"),
-    editingType: formData.get("editingType"),
-    price: formData.get("price"),
-    expectedDelivery: formData.get("expectedDelivery"),
-  }
-
-  const hirerId = formData.get("hirerId")
-  if (hirerId)   raw.hirerId = hirerId
-  const folder = formData.get("folder")
-  if (folder) raw.folder = folder
-  const privateNotes = formData.get("privateNotes")
-  if (privateNotes) raw.privateNotes = privateNotes
-
-  const parsed = createSchema.safeParse(raw)
-  if (!parsed.success) {
-    return { error: "Invalid input" }
-  }
-
-  let imagePath: string | null = null
-  const imageFile = formData.get("image") as File | null
-  if (imageFile && imageFile.size > 0) {
-    imagePath = await uploadImage(imageFile)
-  }
-
-  await ensureWorkType(parsed.data.editingType)
-
-  await db.insert(workEntries)
-    .values({
-      ...parsed.data,
-      retoucherId: Number(session.user.id),
-      imagePath,
-    })
-    .run()
-
-  if (parsed.data.hirerId) {
-    await createNotification({
-      userId: parsed.data.hirerId,
-      message: `${session.user.name} added "${parsed.data.title}" for you`,
-      link: `/hirer`,
-    })
-  }
-
-  revalidatePath("/retoucher")
-  return { ok: true }
 }
 
 export async function updateWorkAction(
