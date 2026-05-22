@@ -175,6 +175,7 @@ function HirerFolderSection({ folder, entries, note }: { folder: string; entries
       <div className="flex items-center justify-between border-b pb-1">
         <h2 className="text-lg font-semibold">{folder}</h2>
         <div className="flex items-center gap-3">
+          <a href={`/api/invoice?folder=${encodeURIComponent(folder)}`} className="text-[11px] text-muted-foreground hover:text-foreground underline">Invoice</a>
           <span className="text-sm text-muted-foreground">${total.toFixed(2)}</span>
           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ps.cls}`}>{ps.label}</span>
         </div>

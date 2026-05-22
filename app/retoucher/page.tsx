@@ -173,6 +173,7 @@ function FolderSection({ folder, entries, note }: { folder: string; entries: any
           {note && <p className="text-xs text-muted-foreground italic border-l-2 border-muted pl-2 mt-1">{note}</p>}
         </div>
         <div className="flex items-center gap-3">
+          <a href={`/api/invoice?folder=${encodeURIComponent(folder)}`} className="text-[11px] text-muted-foreground hover:text-foreground underline">Invoice</a>
           <span className="text-sm text-muted-foreground">${total.toFixed(2)}</span>
           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ps.cls}`}>{ps.label}</span>
         </div>
