@@ -56,7 +56,7 @@ export async function createWorkAction(
     imagePath = await uploadImage(imageFile)
   }
 
-  ensureWorkType(parsed.data.editingType)
+  await ensureWorkType(parsed.data.editingType)
 
   await db.insert(workEntries)
     .values({
@@ -115,7 +115,7 @@ export async function updateWorkAction(
     imagePath = await uploadImage(imageFile)
   }
 
-  if (editingType) ensureWorkType(editingType)
+  if (editingType) await ensureWorkType(editingType)
 
   await db.update(workEntries)
     .set({

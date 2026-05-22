@@ -18,6 +18,7 @@
     "@libsql/client": "^0.17.3",
     "bcryptjs": "latest",
     "class-variance-authority": "latest",
+    "cloudinary": "^2.10.0",
     "clsx": "latest",
     "drizzle-orm": "latest",
     "lucide-react": "latest",
