@@ -69,7 +69,7 @@ export async function createWorkAction(
   if (parsed.data.hirerId) {
     await createNotification({
       userId: parsed.data.hirerId,
-      message: `${session.user.name} assigned "${parsed.data.title}" to you`,
+      message: `${session.user.name} added "${parsed.data.title}" for you`,
       link: `/hirer`,
     })
   }
