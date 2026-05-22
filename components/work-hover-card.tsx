@@ -23,7 +23,7 @@ export function WorkHoverCard({
     >
       {children}
       {show && (
-        <div className="absolute left-0 top-full mt-1 z-50 flex gap-3 rounded-lg border bg-card p-3 shadow-lg w-64">
+        <div className="absolute left-full top-0 ml-2 z-50 flex gap-3 rounded-lg border bg-card p-3 shadow-lg w-64">
           {imageSrc ? (
             <img src={imageSrc} alt="" className="h-16 w-16 rounded object-cover shrink-0" />
           ) : (

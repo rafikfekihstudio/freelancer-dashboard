@@ -177,7 +177,7 @@ function FolderSection({ folder, entries, note }: { folder: string; entries: any
           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ps.cls}`}>{ps.label}</span>
         </div>
       </div>
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border rounded-lg overflow-visible">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/50">
@@ -219,7 +219,7 @@ function FolderSection({ folder, entries, note }: { folder: string; entries: any
 
 function TableSection({ entries, showPayment }: { entries: any[]; showPayment?: boolean }) {
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="border rounded-lg overflow-visible">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-muted/50">

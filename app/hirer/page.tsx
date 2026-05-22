@@ -180,7 +180,7 @@ function HirerFolderSection({ folder, entries, note }: { folder: string; entries
         </div>
       </div>
       <FolderNoteEditor folder={folder} initialContent={note} />
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border rounded-lg overflow-visible">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/50">
@@ -229,7 +229,7 @@ function HirerFolderSection({ folder, entries, note }: { folder: string; entries
 
 function HirerTable({ entries, showPayment }: { entries: any[]; showPayment?: boolean }) {
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="border rounded-lg overflow-visible">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-muted/50">
