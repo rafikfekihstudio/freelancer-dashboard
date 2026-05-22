@@ -9,6 +9,7 @@ import { exportWorkEntriesCsv } from "@/lib/actions/export"
 import { Avatar } from "@/components/ui/avatar"
 import { SearchBar } from "@/components/search-bar"
 import { FilterBar } from "@/components/filter-bar"
+import { WorkHoverCard } from "@/components/work-hover-card"
 import { DeleteEntryButton } from "@/components/delete-entry-button"
 import { listWorkTypes } from "@/lib/actions/work-types"
 import { folderNotes } from "@/lib/db/schema"
@@ -196,7 +197,11 @@ function HirerFolderSection({ folder, entries, note }: { folder: string; entries
           <tbody>
             {entries.map((entry: any) => (
               <tr key={entry.id} className="border-b last:border-0 hover:bg-muted/30">
-                <td className="px-3 py-2"><Thumb src={entry.imagePath} alt={entry.title} /></td>
+                <td className="px-3 py-2">
+                  <WorkHoverCard imageSrc={entry.imagePath} editingType={entry.editingType} expectedDelivery={entry.expectedDelivery}>
+                    <Thumb src={entry.imagePath} alt={entry.title} />
+                  </WorkHoverCard>
+                </td>
                 <td className="px-3 py-2">
                   <Link href={`/hirer/works/${entry.id}`} className="hover:underline font-medium">{entry.title}</Link>
                 </td>
@@ -242,7 +247,11 @@ function HirerTable({ entries, showPayment }: { entries: any[]; showPayment?: bo
         <tbody>
           {entries.map((entry: any) => (
             <tr key={entry.id} className="border-b last:border-0 hover:bg-muted/30">
-              <td className="px-3 py-2"><Thumb src={entry.imagePath} alt={entry.title} /></td>
+              <td className="px-3 py-2">
+                <WorkHoverCard imageSrc={entry.imagePath} editingType={entry.editingType} expectedDelivery={entry.expectedDelivery}>
+                  <Thumb src={entry.imagePath} alt={entry.title} />
+                </WorkHoverCard>
+              </td>
               <td className="px-3 py-2">
                 <Link href={`/hirer/works/${entry.id}`} className="hover:underline font-medium">{entry.title}</Link>
               </td>
