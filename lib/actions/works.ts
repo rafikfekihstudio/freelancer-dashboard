@@ -308,7 +308,7 @@ export async function createBulkWorkAction(
       expectedDelivery: z.string().min(1),
     })
 
-    let createdCount = 0
+    const rows: { parsed: z.infer<typeof entrySchema>; imageFile: File | null }[] = []
     for (let i = 0; i < count; i++) {
       const imageFile = formData.get(`image_${i}`) as File | null
       const raw = {
@@ -318,34 +318,42 @@ export async function createBulkWorkAction(
         price: formData.get(`price_${i}`),
         expectedDelivery: formData.get(`expectedDelivery_${i}`),
       }
-
       const parsed = entrySchema.safeParse(raw)
-      if (!parsed.success) continue
-
-      await ensureWorkType(parsed.data.editingType)
-
-      let imagePath: string | null = null
-      if (imageFile && imageFile.size > 0) {
-        imagePath = await uploadImage(imageFile)
-      }
-
-      const values: any = {
-        ...parsed.data,
-        retoucherId: Number(session.user.id),
-        imagePath,
-      }
-      if (hirerId) values.hirerId = hirerId
-      if (folder) values.folder = folder
-      if (privateNotes) values.privateNotes = privateNotes
-
-      await db.insert(workEntries).values(values).run()
-      createdCount++
+      if (parsed.success) rows.push({ parsed: parsed.data, imageFile })
     }
 
-    if (hirerId && createdCount > 0) {
+    if (rows.length === 0) return { error: "No valid entries" }
+
+    // Collect unique editing types and ensure they exist
+    const types = [...new Set(rows.map((r) => r.parsed.editingType))]
+    await Promise.all(types.map((t) => ensureWorkType(t)))
+
+    // Upload all images in parallel
+    const imagePaths = await Promise.all(
+      rows.map((r) =>
+        r.imageFile && r.imageFile.size > 0 ? uploadImage(r.imageFile) : Promise.resolve(null)
+      )
+    )
+
+    // Insert all entries in parallel
+    await Promise.all(
+      rows.map((r, i) => {
+        const values: any = {
+          ...r.parsed,
+          retoucherId: Number(session.user.id),
+          imagePath: imagePaths[i],
+        }
+        if (hirerId) values.hirerId = hirerId
+        if (folder) values.folder = folder
+        if (privateNotes) values.privateNotes = privateNotes
+        return db.insert(workEntries).values(values).run()
+      })
+    )
+
+    if (hirerId && rows.length > 0) {
       await createNotification({
         userId: hirerId,
-        message: `${session.user.name} added ${createdCount} work entries${folder ? ` to folder "${folder}"` : ""}`,
+        message: `${session.user.name} added ${rows.length} work entries${folder ? ` to folder "${folder}"` : ""}`,
         link: `/hirer`,
       })
     }
