@@ -82,6 +82,10 @@ export default async function HirerPage({
   const allTypes = workTypeList.map((t) => t.name)
   const noteMap = Object.fromEntries(notes.map((n) => [n.folder, n.content]))
 
+  const unpaidTotal = entries
+    .filter((e) => e.paymentStatus !== "paid")
+    .reduce((s, e) => s + e.price, 0)
+
   const folders = [...new Set(entries.map((e) => e.folder).filter(Boolean))] as string[]
 
   const unread = (await db
@@ -96,6 +100,11 @@ export default async function HirerPage({
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-semibold">Commissioned Work</h1>
         <CsvDownloadButton label="Download CSV" fetchCsv={exportWorkEntriesCsv} filename="commissioned-work.csv" />
+      </div>
+
+      <div className="rounded-lg border p-4">
+        <p className="text-lg font-bold text-red-600">${Number(unpaidTotal).toFixed(2)}</p>
+        <p className="text-xs text-muted-foreground">Total Unpaid</p>
       </div>
 
       {unread.length > 0 && <NotificationsSection notifications={unread} />}
@@ -176,7 +185,6 @@ function HirerFolderSection({ folder, entries, note }: { folder: string; entries
       <div className="flex items-center justify-between border-b pb-1">
         <h2 className="text-lg font-semibold">{folder}</h2>
         <div className="flex items-center gap-3">
-          <a href={`/api/invoice?folder=${encodeURIComponent(folder)}`} className="text-[11px] text-muted-foreground hover:text-foreground underline">Invoice</a>
           <span className="text-sm text-muted-foreground">${total.toFixed(2)}</span>
           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ps.cls}`}>{ps.label}</span>
         </div>
