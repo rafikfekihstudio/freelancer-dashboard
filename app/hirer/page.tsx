@@ -103,7 +103,7 @@ export default async function HirerPage({
       </div>
 
       <div className="rounded-lg border p-4">
-        <p className="text-lg font-bold text-red-600">${Number(unpaidTotal).toFixed(2)}</p>
+        <p className="text-lg font-bold">${Number(unpaidTotal).toFixed(2)}</p>
         <p className="text-xs text-muted-foreground">Total Unpaid</p>
       </div>
 
