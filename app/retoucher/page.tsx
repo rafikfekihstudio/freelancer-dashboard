@@ -10,6 +10,7 @@ import { SearchBar } from "@/components/search-bar"
 import { FilterBar } from "@/components/filter-bar"
 import { WorkHoverCard } from "@/components/work-hover-card"
 import { DeleteEntryButton } from "@/components/delete-entry-button"
+import { InlineStatus } from "@/components/inline-status"
 import { listWorkTypes } from "@/lib/actions/work-types"
 import { folderNotes } from "@/lib/db/schema"
 import DashboardShell from "@/components/dashboard-shell"
@@ -96,6 +97,9 @@ export default async function RetoucherPage({
         <h1 className="text-3xl font-semibold">My Work</h1>
         <div className="flex gap-2">
           <CsvDownloadButton label="Download CSV" fetchCsv={exportWorkEntriesCsv} filename="work-entries.csv" />
+          <Link href="/retoucher/bulk" className="bg-secondary text-secondary-foreground hover:bg-secondary/80 inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors">
+            Bulk Upload
+          </Link>
           <Link href="/retoucher/new" className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors">
             New Work Entry
           </Link>
@@ -206,7 +210,14 @@ function FolderSection({ folder, entries, note }: { folder: string; entries: any
                 <td className="px-3 py-2">{entry.editingType}</td>
                 <td className="px-3 py-2">${entry.price.toFixed(2)}</td>
                 <td className="px-3 py-2">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${entry.status === "completed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>{entry.status}</span>
+                  <InlineStatus
+                    entryId={entry.id}
+                    current={entry.status}
+                    options={[
+                      { value: "in-progress", label: "in-progress", cls: "bg-yellow-100 text-yellow-700" },
+                      { value: "completed", label: "completed", cls: "bg-green-100 text-green-700" },
+                    ]}
+                  />
                 </td>
                 <td className="px-3 py-2"><DeleteEntryButton entryId={entry.id} /></td>
               </tr>
@@ -249,11 +260,26 @@ function TableSection({ entries, showPayment }: { entries: any[]; showPayment?: 
               <td className="px-3 py-2">{entry.editingType}</td>
               <td className="px-3 py-2">${entry.price.toFixed(2)}</td>
               <td className="px-3 py-2">
-                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${entry.status === "completed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>{entry.status}</span>
+                <InlineStatus
+                  entryId={entry.id}
+                  current={entry.status}
+                  options={[
+                    { value: "in-progress", label: "in-progress", cls: "bg-yellow-100 text-yellow-700" },
+                    { value: "completed", label: "completed", cls: "bg-green-100 text-green-700" },
+                  ]}
+                />
               </td>
               {showPayment && (
                 <td className="px-3 py-2">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${entry.paymentStatus === "paid" ? "bg-green-100 text-green-700" : entry.paymentStatus === "partial" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-700"}`}>{entry.paymentStatus}</span>
+                  <InlineStatus
+                    entryId={entry.id}
+                    current={entry.paymentStatus}
+                    options={[
+                      { value: "unpaid", label: "unpaid", cls: "bg-gray-100 text-gray-700" },
+                      { value: "partial", label: "partial", cls: "bg-blue-100 text-blue-700" },
+                      { value: "paid", label: "paid", cls: "bg-green-100 text-green-700" },
+                    ]}
+                  />
                 </td>
               )}
               <td className="px-3 py-2"><DeleteEntryButton entryId={entry.id} /></td>

@@ -282,3 +282,79 @@ export async function upsertFolderNoteAction(formData: FormData) {
   revalidatePath("/retoucher")
   return { ok: true }
 }
+
+export async function createBulkWorkAction(
+  _prev: { error?: string; ok?: boolean } | null,
+  formData: FormData
+): Promise<{ error?: string; ok?: boolean } | null> {
+  try {
+    const session = await auth()
+    if (!session || session.user.role !== "retoucher") {
+      return { error: "Unauthorized" }
+    }
+
+    const count = Number(formData.get("count"))
+    if (!count || count < 1) return { error: "No entries" }
+
+    const hirerId = formData.get("hirerId") ? Number(formData.get("hirerId")) : null
+    const folder = formData.get("folder") as string | null
+    const privateNotes = formData.get("privateNotes") as string | null
+
+    const entrySchema = z.object({
+      title: z.string().min(1),
+      originalFilename: z.string().min(1),
+      editingType: z.string().min(1),
+      price: z.coerce.number().min(0),
+      expectedDelivery: z.string().min(1),
+    })
+
+    let createdCount = 0
+    for (let i = 0; i < count; i++) {
+      const imageFile = formData.get(`image_${i}`) as File | null
+      const raw = {
+        title: formData.get(`title_${i}`),
+        originalFilename: formData.get(`originalFilename_${i}`),
+        editingType: formData.get(`editingType_${i}`),
+        price: formData.get(`price_${i}`),
+        expectedDelivery: formData.get(`expectedDelivery_${i}`),
+      }
+
+      const parsed = entrySchema.safeParse(raw)
+      if (!parsed.success) continue
+
+      await ensureWorkType(parsed.data.editingType)
+
+      let imagePath: string | null = null
+      if (imageFile && imageFile.size > 0) {
+        imagePath = await uploadImage(imageFile)
+      }
+
+      const values: any = {
+        ...parsed.data,
+        retoucherId: Number(session.user.id),
+        imagePath,
+      }
+      if (hirerId) values.hirerId = hirerId
+      if (folder) values.folder = folder
+      if (privateNotes) values.privateNotes = privateNotes
+
+      await db.insert(workEntries).values(values).run()
+      createdCount++
+    }
+
+    if (hirerId && createdCount > 0) {
+      await createNotification({
+        userId: hirerId,
+        message: `${session.user.name} added ${createdCount} work entries${folder ? ` to folder "${folder}"` : ""}`,
+        link: `/hirer`,
+      })
+    }
+
+    revalidatePath("/retoucher")
+    revalidatePath("/hirer")
+    return { ok: true }
+  } catch (e) {
+    console.error("[createBulkWorkAction]", e)
+    return { error: "Something went wrong. Please try again." }
+  }
+}
