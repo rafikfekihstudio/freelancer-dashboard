@@ -12,6 +12,7 @@ import { WorkHoverCard } from "@/components/work-hover-card"
 import { DeleteEntryButton } from "@/components/delete-entry-button"
 import { InlineStatus } from "@/components/inline-status"
 import { listWorkTypes } from "@/lib/actions/work-types"
+
 import { folderNotes } from "@/lib/db/schema"
 import DashboardShell from "@/components/dashboard-shell"
 
@@ -52,7 +53,7 @@ export default async function RetoucherPage({
   if (from) conditions.push(gte(workEntries.createdAt, from))
   if (to) conditions.push(lte(workEntries.createdAt, to + "T23:59:59"))
 
-  const [entries, workTypeList, allNotes] = await Promise.all([
+  const [entries, workTypeList, allNotes, hirers] = await Promise.all([
     await db
       .select({
         id: workEntries.id,
@@ -65,6 +66,7 @@ export default async function RetoucherPage({
         expectedDelivery: workEntries.expectedDelivery,
         status: workEntries.status,
         paymentStatus: workEntries.paymentStatus,
+        hirerId: workEntries.hirerId,
         hirerName: users.name,
       })
       .from(workEntries)
@@ -74,6 +76,10 @@ export default async function RetoucherPage({
       .all(),
     listWorkTypes(),
     await db.select().from(folderNotes).all(),
+    await db.select({ id: users.id, name: users.name, email: users.email })
+      .from(users)
+      .where(eq(users.role, "hirer"))
+      .all(),
   ])
 
   const allTypes = workTypeList.map((t) => t.name)
@@ -131,7 +137,7 @@ export default async function RetoucherPage({
         <>
           {folders.map((folder) => {
             const folderEntries = entries.filter((e) => e.folder === folder)
-            return <FolderSection key={folder} folder={folder} entries={folderEntries} note={noteMap[folder] ?? null} />
+            return <FolderSection key={folder} folder={folder} entries={folderEntries} note={noteMap[folder] ?? null} hirers={hirers} />
           })}
           {entries.filter((e) => !e.folder).length > 0 && (
             <section className="space-y-2">
@@ -161,10 +167,11 @@ function folderPaymentStatus(entries: any[]): { label: string; cls: string } {
   return { label: "unpaid", cls: "bg-gray-100 text-gray-700" }
 }
 
-function FolderSection({ folder, entries, note }: { folder: string; entries: any[]; note: string | null }) {
+function FolderSection({ folder, entries, note, hirers }: { folder: string; entries: any[]; note: string | null; hirers: { id: number; name: string; email: string }[] }) {
   const ps = folderPaymentStatus(entries)
   const total = entries.reduce((s: number, e: any) => s + e.price, 0)
-  const hirerName = entries.find((e: any) => e.hirerName)?.hirerName ?? null
+  const currentHirerId = entries.find((e: any) => e.hirerId)?.hirerId ?? null
+  const currentHirerName = entries.find((e: any) => e.hirerName)?.hirerName ?? null
   return (
     <section className="space-y-2">
       <div className="flex items-center justify-between border-b pb-1">
@@ -173,7 +180,7 @@ function FolderSection({ folder, entries, note }: { folder: string; entries: any
             <h2 className="text-lg font-semibold">{folder}</h2>
             <Link href={`/retoucher/new?folder=${encodeURIComponent(folder)}`} className="text-muted-foreground hover:text-foreground text-lg leading-none" title="Add to this folder">+</Link>
           </div>
-          {hirerName && <p className="text-xs text-muted-foreground">Retouching for {hirerName}</p>}
+          <FolderHirerSelect folder={folder} hirers={hirers} currentHirerId={currentHirerId} currentHirerName={currentHirerName} />
           {note && <p className="text-xs text-muted-foreground italic border-l-2 border-muted pl-2 mt-1">{note}</p>}
         </div>
         <div className="flex items-center gap-3">
@@ -288,5 +295,26 @@ function TableSection({ entries, showPayment }: { entries: any[]; showPayment?: 
         </tbody>
       </table>
     </div>
+  )
+}
+
+function FolderHirerSelect({ folder, hirers, currentHirerId, currentHirerName }: { folder: string; hirers: { id: number; name: string; email: string }[]; currentHirerId: number | null; currentHirerName: string | null }) {
+  return (
+    <form action="/api/auth/folder-hirer" method="POST" className="inline">
+      <input type="hidden" name="folder" value={folder} />
+      <select
+        name="hirerId"
+        defaultValue={currentHirerId ?? ""}
+        onChange={(e) => e.target.form?.requestSubmit()}
+        className="text-xs bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground focus:outline-none"
+        title="Assign hirer to this folder"
+      >
+        <option value="">{currentHirerName ? `Retouching for ${currentHirerName}` : "No hirer"}</option>
+        {hirers.map((h) => (
+          <option key={h.id} value={h.id}>{h.name} ({h.email})</option>
+        ))}
+        {currentHirerName && <option value="">— Remove hirer —</option>}
+      </select>
+    </form>
   )
 }

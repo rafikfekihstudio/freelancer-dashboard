@@ -366,3 +366,49 @@ export async function createBulkWorkAction(
     return { error: "Something went wrong. Please try again." }
   }
 }
+
+export async function bulkAssignFolderHirerAction(formData: FormData) {
+  try {
+    const session = await auth()
+    if (!session || session.user.role !== "retoucher") return { error: "Unauthorized" }
+
+    const folder = formData.get("folder") as string
+    const hirerId = formData.get("hirerId") ? Number(formData.get("hirerId")) : null
+
+    if (!folder) return { error: "Invalid folder" }
+
+    const uid = Number(session.user.id)
+
+    if (hirerId) {
+      await db.update(workEntries)
+        .set({ hirerId, updatedAt: new Date().toISOString() })
+        .where(and(eq(workEntries.folder, folder), eq(workEntries.retoucherId, uid)))
+        .run()
+    } else {
+      await db.update(workEntries)
+        .set({ hirerId: null, updatedAt: new Date().toISOString() })
+        .where(and(eq(workEntries.folder, folder), eq(workEntries.retoucherId, uid)))
+        .run()
+    }
+
+    if (hirerId) {
+      const entry = await db.select().from(workEntries)
+        .where(and(eq(workEntries.folder, folder), eq(workEntries.retoucherId, uid)))
+        .get()
+      if (entry) {
+        await createNotification({
+          userId: hirerId,
+          message: `${session.user.name} assigned you to folder "${folder}"`,
+          link: `/hirer`,
+        })
+      }
+    }
+
+    revalidatePath("/retoucher")
+    revalidatePath("/hirer")
+    return { ok: true }
+  } catch (e) {
+    console.error("[bulkAssignFolderHirer]", e)
+    return { error: "Something went wrong. Please try again." }
+  }
+}
