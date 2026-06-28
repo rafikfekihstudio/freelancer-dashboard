@@ -14,7 +14,7 @@ export function ThemeToggle() {
       onClick={toggle}
       className="hover:bg-accent hover:text-accent-foreground w-full rounded-md px-2 py-1.5 text-left text-sm transition-colors"
     >
-      Toggle Dark Mode
+      Toggle Light Mode
     </button>
   )
 }
