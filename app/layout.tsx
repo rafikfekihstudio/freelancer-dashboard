@@ -4,7 +4,7 @@ import { Providers } from "@/components/session-provider"
 import { siteConfig } from "@/lib/site-config"
 
 export const metadata: Metadata = {
-  title: siteConfig.name,
+  title: "Rafic Fekih Studio Dashboard",
   description: siteConfig.description,
 }
 
