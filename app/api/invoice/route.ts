@@ -22,7 +22,10 @@ export async function GET(req: Request) {
         title: workEntries.title,
         editingType: workEntries.editingType,
         price: workEntries.price,
+        imagePath: workEntries.imagePath,
+        hirerId: workEntries.hirerId,
         hirerName: users.name,
+        hirerEmail: users.email,
       })
       .from(workEntries)
       .leftJoin(users, eq(workEntries.hirerId, users.id))
@@ -33,13 +36,15 @@ export async function GET(req: Request) {
 
     const total = entries.reduce((s, e) => s + e.price, 0)
     const hirerName = entries.find((e) => e.hirerName)?.hirerName ?? "—"
+    const hirerEmail = entries.find((e) => e.hirerEmail)?.hirerEmail ?? ""
 
     const pdf = await generateInvoicePdf({
       folder,
       entries,
       total,
-      partyLabel: "Retouching for",
+      partyLabel: "BILLED TO",
       partyName: hirerName,
+      partyEmail: hirerEmail,
     })
 
     return new NextResponse(pdf, {
@@ -57,7 +62,10 @@ export async function GET(req: Request) {
         title: workEntries.title,
         editingType: workEntries.editingType,
         price: workEntries.price,
+        imagePath: workEntries.imagePath,
+        retoucherId: workEntries.retoucherId,
         retoucherName: users.name,
+        retoucherEmail: users.email,
       })
       .from(workEntries)
       .innerJoin(users, eq(workEntries.retoucherId, users.id))
@@ -68,13 +76,15 @@ export async function GET(req: Request) {
 
     const total = entries.reduce((s, e) => s + e.price, 0)
     const retoucherName = entries.find((e) => e.retoucherName)?.retoucherName ?? "—"
+    const retoucherEmail = entries.find((e) => e.retoucherEmail)?.retoucherEmail ?? ""
 
     const pdf = await generateInvoicePdf({
       folder,
       entries,
       total,
-      partyLabel: "Retouched by",
+      partyLabel: "BILLED TO",
       partyName: retoucherName,
+      partyEmail: retoucherEmail,
     })
 
     return new NextResponse(pdf, {
