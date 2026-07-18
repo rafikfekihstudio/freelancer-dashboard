@@ -7,7 +7,7 @@ type InvoiceEntry = {
   imagePath?: string | null
 }
 
-export function generateInvoicePdf({
+export async function generateInvoicePdf({
   folder,
   entries,
   total,
@@ -24,6 +24,20 @@ export function generateInvoicePdf({
   partyCountry: string
   invoiceRef: string
 }): Promise<ArrayBuffer> {
+  // Try to fetch a thumbnail image from the entries
+  let thumbnailBuffer: Buffer | null = null
+  for (const entry of entries) {
+    if (entry.imagePath && !thumbnailBuffer) {
+      try {
+        const res = await fetch(entry.imagePath)
+        if (res.ok) {
+          const ab = await res.arrayBuffer()
+          thumbnailBuffer = Buffer.from(ab)
+        }
+      } catch {}
+    }
+  }
+
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ size: "A4", margin: 50 })
     const chunks: Buffer[] = []
@@ -164,14 +178,54 @@ export function generateInvoicePdf({
       }
     }
 
-    // ── Total line ──
-    y += 8
-    doc.moveTo(colSubtotal, y).lineTo(pageW - margin, y).strokeColor("#DDDDDD").lineWidth(0.5).stroke()
-    y += 8
+    // ── Thumbnail collage (one random image) ──
+    if (thumbnailBuffer) {
+      y += 10
+      try {
+        const thumbW = 180
+        const thumbH = 120
+        const thumbX = margin
+        doc.image(thumbnailBuffer, thumbX, y, { width: thumbW, height: thumbH })
+        y += thumbH + 10
+      } catch {}
+    }
 
-    doc.fontSize(10).font("Helvetica-Bold").fillColor("#222222")
-    doc.text("TOTAL", colSubtotal - 50, y)
+    // ── Total line ──
+    y += 5
+    doc.moveTo(margin, y).lineTo(pageW - margin, y).strokeColor("#DDDDDD").lineWidth(0.5).stroke()
+    y += 10
+
+    doc.fontSize(14).font("Helvetica-Bold").fillColor("#222222")
+    doc.text("Total", margin, y)
     doc.text(`$${total.toFixed(2)}`, colSubtotal, y, { width: 80, align: "right" })
+    y += 24
+
+    // ── Thank you ──
+    doc.fontSize(10).font("Helvetica").fillColor("#444444")
+    doc.text("Thank you for your collaboration", margin, y)
+    y += 30
+
+    // ── Bank details ──
+    doc.moveTo(margin, y).lineTo(pageW - margin, y).strokeColor("#DDDDDD").lineWidth(0.5).stroke()
+    y += 12
+
+    const bankCol1 = margin
+    const bankCol2 = margin + 160
+    const bankCol3 = margin + 320
+    const bankCol4 = margin + 430
+
+    doc.fontSize(8).font("Helvetica-Bold").fillColor("#888888")
+    doc.text("ACCOUNT NAME", bankCol1, y)
+    doc.text("Bank name", bankCol2, y)
+    doc.text("Swift code", bankCol3, y)
+    doc.text("Account # (IBAN)", bankCol4, y)
+    y += 14
+
+    doc.fontSize(9).font("Helvetica").fillColor("#444444")
+    doc.text("Rafik fekih", bankCol1, y)
+    doc.text("Banque de Tunisie et des Emirats", bankCol2, y)
+    doc.text("BTEXTNTTXXX", bankCol3, y)
+    doc.text("TN59 24 031 201 7432 512201 60", bankCol4, y)
 
     doc.end()
   })
