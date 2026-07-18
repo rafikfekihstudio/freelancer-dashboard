@@ -12,6 +12,7 @@ type Props = {
 export function InvoiceForm({ folder, defaultName, defaultEmail, trigger }: Props) {
   const [open, setOpen] = useState(false)
   const [clientName, setClientName] = useState(defaultName)
+  const [clientCompany, setClientCompany] = useState("")
   const [clientEmail, setClientEmail] = useState(defaultEmail)
   const [clientCountry, setClientCountry] = useState("")
   const [invoiceRef, setInvoiceRef] = useState("")
@@ -23,6 +24,7 @@ export function InvoiceForm({ folder, defaultName, defaultEmail, trigger }: Prop
     const params = new URLSearchParams({
       folder,
       clientName: clientName.trim(),
+      clientCompany: clientCompany.trim(),
       clientEmail: clientEmail.trim(),
       clientCountry: clientCountry.trim(),
       ref: invoiceRef.trim(),
@@ -55,6 +57,15 @@ export function InvoiceForm({ folder, defaultName, defaultEmail, trigger }: Prop
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
                   required
+                  className="border-input bg-background ring-offset-background flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Company Name</label>
+                <input
+                  value={clientCompany}
+                  onChange={(e) => setClientCompany(e.target.value)}
+                  placeholder="e.g. frmlabstudio"
                   className="border-input bg-background ring-offset-background flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 />
               </div>

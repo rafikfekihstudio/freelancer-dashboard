@@ -14,6 +14,7 @@ export async function GET(req: Request) {
   if (!folder) return new NextResponse("Missing folder", { status: 400 })
 
   const clientName = searchParams.get("clientName") ?? ""
+  const clientCompany = searchParams.get("clientCompany") ?? ""
   const clientEmail = searchParams.get("clientEmail") ?? ""
   const clientCountry = searchParams.get("clientCountry") ?? ""
   const invoiceRef = searchParams.get("ref") ?? ""
@@ -45,6 +46,7 @@ export async function GET(req: Request) {
       entries,
       total,
       partyName: clientName || entries.find((e) => e.hirerName)?.hirerName || "—",
+      partyCompany: clientCompany,
       partyEmail: clientEmail || entries.find((e) => e.hirerEmail)?.hirerEmail || "",
       partyCountry: clientCountry,
       invoiceRef,
@@ -83,6 +85,7 @@ export async function GET(req: Request) {
       entries,
       total,
       partyName: clientName || entries.find((e) => e.retoucherName)?.retoucherName || "—",
+      partyCompany: clientCompany,
       partyEmail: clientEmail || entries.find((e) => e.retoucherEmail)?.retoucherEmail || "",
       partyCountry: clientCountry,
       invoiceRef,

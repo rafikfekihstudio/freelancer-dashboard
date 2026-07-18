@@ -12,6 +12,7 @@ export async function generateInvoicePdf({
   entries,
   total,
   partyName,
+  partyCompany,
   partyEmail,
   partyCountry,
   invoiceRef,
@@ -20,19 +21,21 @@ export async function generateInvoicePdf({
   entries: InvoiceEntry[]
   total: number
   partyName: string
+  partyCompany: string
   partyEmail: string
   partyCountry: string
   invoiceRef: string
 }): Promise<ArrayBuffer> {
-  // Try to fetch a thumbnail image from the entries
-  let thumbnailBuffer: Buffer | null = null
+  // Try to fetch a thumbnail for each group
+  const groupThumbnails: Record<string, Buffer | null> = {}
   for (const entry of entries) {
-    if (entry.imagePath && !thumbnailBuffer) {
+    const key = entry.editingType
+    if (!groupThumbnails[key] && entry.imagePath) {
       try {
         const res = await fetch(entry.imagePath)
         if (res.ok) {
           const ab = await res.arrayBuffer()
-          thumbnailBuffer = Buffer.from(ab)
+          groupThumbnails[key] = Buffer.from(ab)
         }
       } catch {}
     }
@@ -80,7 +83,8 @@ export async function generateInvoicePdf({
     doc.text("BILLED TO", margin, y)
     y += 16
     doc.fontSize(11).font("Helvetica-Bold").fillColor("#222222")
-    doc.text(partyName, margin, y)
+    const displayName = partyCompany ? `${partyName} - ${partyCompany}` : partyName
+    doc.text(displayName, margin, y)
     y += 16
     if (partyEmail) {
       doc.fontSize(9).font("Helvetica").fillColor("#444444")
@@ -122,8 +126,11 @@ export async function generateInvoicePdf({
 
     // ── Table header ──
     doc.fontSize(8).font("Helvetica-Bold").fillColor("#888888")
-    const colNum = margin
-    const colTitle = margin + 30
+    const thumbW = 60
+    const thumbH = 40
+    const thumbGap = 8
+    const colNum = margin + thumbW + thumbGap
+    const colTitle = margin + thumbW + thumbGap + 20
     const colSubtotal = pageW - margin - 80
     doc.text("#", colNum, y)
     doc.text("TITLE / DESCRIPTION", colTitle, y)
@@ -147,47 +154,48 @@ export async function generateInvoicePdf({
       const group = groups[key]
       const count = group.entries.length
       const rate = count > 0 ? group.subtotal / count : 0
+      const rowY = y
+
+      // Thumbnail
+      const thumbBuf = groupThumbnails[key]
+      if (thumbBuf) {
+        try {
+          doc.image(thumbBuf, margin, rowY, { width: thumbW, height: thumbH })
+        } catch {}
+      } else {
+        doc.save()
+        doc.rect(margin, rowY, thumbW, thumbH).fill("#E5E7EB")
+        doc.restore()
+      }
 
       // Row number
       doc.fontSize(9).font("Helvetica-Bold").fillColor("#222222")
-      doc.text(String(i + 1), colNum, y)
+      doc.text(String(i + 1), colNum, rowY)
 
       // Title: "N x images"
-      doc.font("Helvetica-Bold").text(`${count} x images`, colTitle, y)
+      doc.font("Helvetica-Bold").text(`${count} x images`, colTitle, rowY)
       y += 14
 
       // Description: editing type
       doc.fontSize(9).font("Helvetica").fillColor("#555555")
-      doc.text(key, colTitle, y)
+      doc.text(key, colTitle, rowY + 14)
       y += 14
 
       // Rate x count
       doc.fontSize(9).font("Helvetica").fillColor("#444444")
-      doc.text(`$${rate.toFixed(0)}*${count}`, colSubtotal, y - 28, { width: 80, align: "right" })
+      doc.text(`$${rate.toFixed(0)}*${count}`, colSubtotal, rowY, { width: 80, align: "right" })
 
       // Subtotal
       doc.fontSize(10).font("Helvetica-Bold").fillColor("#222222")
-      doc.text(`$${group.subtotal.toFixed(0)}`, colSubtotal, y - 14, { width: 80, align: "right" })
+      doc.text(`$${group.subtotal.toFixed(0)}`, colSubtotal, rowY + 14, { width: 80, align: "right" })
 
-      y += 12
+      y += 20
 
       // Separator line between rows
       if (i < groupKeys.length - 1) {
         doc.moveTo(margin, y).lineTo(pageW - margin, y).strokeColor("#EEEEEE").lineWidth(0.5).stroke()
         y += 8
       }
-    }
-
-    // ── Thumbnail collage (one random image) ──
-    if (thumbnailBuffer) {
-      y += 10
-      try {
-        const thumbW = 180
-        const thumbH = 120
-        const thumbX = margin
-        doc.image(thumbnailBuffer, thumbX, y, { width: thumbW, height: thumbH })
-        y += thumbH + 10
-      } catch {}
     }
 
     // ── Total line ──
