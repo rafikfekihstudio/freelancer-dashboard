@@ -13,6 +13,11 @@ export async function GET(req: Request) {
   const folder = searchParams.get("folder")
   if (!folder) return new NextResponse("Missing folder", { status: 400 })
 
+  const clientName = searchParams.get("clientName") ?? ""
+  const clientEmail = searchParams.get("clientEmail") ?? ""
+  const clientCountry = searchParams.get("clientCountry") ?? ""
+  const invoiceRef = searchParams.get("ref") ?? ""
+
   const uid = Number(session.user.id)
 
   if (session.user.role === "retoucher") {
@@ -23,7 +28,6 @@ export async function GET(req: Request) {
         editingType: workEntries.editingType,
         price: workEntries.price,
         imagePath: workEntries.imagePath,
-        hirerId: workEntries.hirerId,
         hirerName: users.name,
         hirerEmail: users.email,
       })
@@ -35,16 +39,15 @@ export async function GET(req: Request) {
     if (entries.length === 0) return new NextResponse("Not found", { status: 404 })
 
     const total = entries.reduce((s, e) => s + e.price, 0)
-    const hirerName = entries.find((e) => e.hirerName)?.hirerName ?? "—"
-    const hirerEmail = entries.find((e) => e.hirerEmail)?.hirerEmail ?? ""
 
     const pdf = await generateInvoicePdf({
       folder,
       entries,
       total,
-      partyLabel: "BILLED TO",
-      partyName: hirerName,
-      partyEmail: hirerEmail,
+      partyName: clientName || entries.find((e) => e.hirerName)?.hirerName || "—",
+      partyEmail: clientEmail || entries.find((e) => e.hirerEmail)?.hirerEmail || "",
+      partyCountry: clientCountry,
+      invoiceRef,
     })
 
     return new NextResponse(pdf, {
@@ -63,7 +66,6 @@ export async function GET(req: Request) {
         editingType: workEntries.editingType,
         price: workEntries.price,
         imagePath: workEntries.imagePath,
-        retoucherId: workEntries.retoucherId,
         retoucherName: users.name,
         retoucherEmail: users.email,
       })
@@ -75,16 +77,15 @@ export async function GET(req: Request) {
     if (entries.length === 0) return new NextResponse("Not found", { status: 404 })
 
     const total = entries.reduce((s, e) => s + e.price, 0)
-    const retoucherName = entries.find((e) => e.retoucherName)?.retoucherName ?? "—"
-    const retoucherEmail = entries.find((e) => e.retoucherEmail)?.retoucherEmail ?? ""
 
     const pdf = await generateInvoicePdf({
       folder,
       entries,
       total,
-      partyLabel: "BILLED TO",
-      partyName: retoucherName,
-      partyEmail: retoucherEmail,
+      partyName: clientName || entries.find((e) => e.retoucherName)?.retoucherName || "—",
+      partyEmail: clientEmail || entries.find((e) => e.retoucherEmail)?.retoucherEmail || "",
+      partyCountry: clientCountry,
+      invoiceRef,
     })
 
     return new NextResponse(pdf, {

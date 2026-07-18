@@ -11,16 +11,18 @@ export function generateInvoicePdf({
   folder,
   entries,
   total,
-  partyLabel,
   partyName,
   partyEmail,
+  partyCountry,
+  invoiceRef,
 }: {
   folder: string
   entries: InvoiceEntry[]
   total: number
-  partyLabel: string
   partyName: string
   partyEmail: string
+  partyCountry: string
+  invoiceRef: string
 }): Promise<ArrayBuffer> {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ size: "A4", margin: 50 })
@@ -34,10 +36,9 @@ export function generateInvoicePdf({
 
     const pageW = doc.page.width
     const margin = 50
-    const contentW = pageW - margin * 2
     const now = new Date()
     const invoiceDate = `${String(now.getDate()).padStart(2, "0")}.${String(now.getMonth() + 1).padStart(2, "0")}.${now.getFullYear()}`
-    const invoiceNumber = `#${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}-${folder.replace(/\s+/g, "").slice(0, 8).toUpperCase()}`
+    const ref = invoiceRef || `RF${String(now.getMonth() + 1).padStart(2, "0")}${now.getFullYear()}`
 
     // ── Header ──
     let y = 50
@@ -52,17 +53,17 @@ export function generateInvoicePdf({
     y += 13
     doc.text("Sousse, Tunisia", margin, y)
 
-    // Right: Invoice title + number
+    // Right: Invoice title + reference
     doc.fontSize(32).font("Helvetica-Bold").fillColor("#222222")
     doc.text("Invoice", pageW - margin - 200, 50, { width: 200, align: "right" })
     doc.fontSize(10).font("Helvetica").fillColor("#666666")
-    doc.text(invoiceNumber, pageW - margin - 200, 88, { width: 200, align: "right" })
+    doc.text(`#${ref}`, pageW - margin - 200, 88, { width: 200, align: "right" })
 
     y = 150
 
     // ── Billed To ──
     doc.fontSize(8).font("Helvetica-Bold").fillColor("#888888")
-    doc.text(partyLabel, margin, y)
+    doc.text("BILLED TO", margin, y)
     y += 16
     doc.fontSize(11).font("Helvetica-Bold").fillColor("#222222")
     doc.text(partyName, margin, y)
@@ -70,6 +71,11 @@ export function generateInvoicePdf({
     if (partyEmail) {
       doc.fontSize(9).font("Helvetica").fillColor("#444444")
       doc.text(partyEmail, margin, y)
+      y += 13
+    }
+    if (partyCountry) {
+      doc.fontSize(9).font("Helvetica").fillColor("#444444")
+      doc.text(partyCountry, margin, y)
       y += 13
     }
 
@@ -84,15 +90,14 @@ export function generateInvoicePdf({
     const amountX = pageW - margin - 120
     doc.fontSize(8).font("Helvetica-Bold").fillColor("#888888")
     doc.text("AMOUNT DUE", amountX, 150, { width: 120, align: "right" })
-    y = 168
-    // Green box
+    const boxY = 168
     const boxW = 120
     const boxH = 28
     doc.save()
-    doc.roundedRect(amountX, y, boxW, boxH, 4).fill("#2ECC71")
+    doc.roundedRect(amountX, boxY, boxW, boxH, 4).fill("#2ECC71")
     doc.restore()
     doc.fontSize(16).font("Helvetica-Bold").fillColor("#FFFFFF")
-    doc.text(`$${total.toFixed(0)}`, amountX, y + 5, { width: boxW, align: "center" })
+    doc.text(`$${total.toFixed(0)}`, amountX, boxY + 5, { width: boxW, align: "center" })
 
     y = 215
 

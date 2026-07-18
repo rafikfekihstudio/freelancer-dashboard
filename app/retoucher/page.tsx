@@ -13,6 +13,7 @@ import { DeleteEntryButton } from "@/components/delete-entry-button"
 import { InlineStatus } from "@/components/inline-status"
 import { FolderHirerSelect } from "@/components/folder-hirer-select"
 import { FolderPaymentBadge } from "@/components/folder-payment-badge"
+import { InvoiceForm } from "@/components/invoice-form"
 import { listWorkTypes } from "@/lib/actions/work-types"
 
 import { folderNotes } from "@/lib/db/schema"
@@ -70,6 +71,7 @@ export default async function RetoucherPage({
         paymentStatus: workEntries.paymentStatus,
         hirerId: workEntries.hirerId,
         hirerName: users.name,
+        hirerEmail: users.email,
       })
       .from(workEntries)
       .leftJoin(users, eq(workEntries.hirerId, users.id))
@@ -186,7 +188,12 @@ function FolderSection({ folder, entries, note, hirers }: { folder: string; entr
           {note && <p className="text-xs text-muted-foreground italic border-l-2 border-muted pl-2 mt-1">{note}</p>}
         </div>
         <div className="flex items-center gap-3">
-          <a href={`/api/invoice?folder=${encodeURIComponent(folder)}`} className="text-[11px] text-muted-foreground hover:text-foreground underline">Invoice</a>
+          <InvoiceForm
+            folder={folder}
+            defaultName={currentHirerName ?? ""}
+            defaultEmail={entries.find((e: any) => e.hirerName === currentHirerName)?.hirerEmail ?? ""}
+            trigger={<span className="text-[11px] text-muted-foreground hover:text-foreground underline">Invoice</span>}
+          />
           <span className="text-sm text-muted-foreground">${total.toFixed(2)}</span>
           <FolderPaymentBadge folder={folder} current={ps.label} />
         </div>
