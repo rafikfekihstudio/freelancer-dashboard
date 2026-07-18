@@ -200,6 +200,7 @@ function FolderSection({ folder, entries, note, hirers }: { folder: string; entr
               <th className="px-3 py-2 text-left font-medium">Type</th>
               <th className="px-3 py-2 text-left font-medium">Price</th>
               <th className="px-3 py-2 text-left font-medium">Status</th>
+              <th className="px-3 py-2 text-left font-medium">Payment</th>
               <th className="px-3 py-2 w-8"></th>
             </tr>
           </thead>
@@ -224,6 +225,17 @@ function FolderSection({ folder, entries, note, hirers }: { folder: string; entr
                     options={[
                       { value: "in-progress", label: "in-progress", cls: "bg-yellow-100 text-yellow-700" },
                       { value: "completed", label: "completed", cls: "bg-green-100 text-green-700" },
+                    ]}
+                  />
+                </td>
+                <td className="px-3 py-2">
+                  <InlineStatus
+                    entryId={entry.id}
+                    current={entry.paymentStatus}
+                    options={[
+                      { value: "unpaid", label: "unpaid", cls: "bg-gray-100 text-gray-700" },
+                      { value: "partial", label: "partial", cls: "bg-blue-100 text-blue-700" },
+                      { value: "paid", label: "paid", cls: "bg-green-100 text-green-700" },
                     ]}
                   />
                 </td>
