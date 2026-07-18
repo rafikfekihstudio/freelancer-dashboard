@@ -12,6 +12,7 @@ import { WorkHoverCard } from "@/components/work-hover-card"
 import { DeleteEntryButton } from "@/components/delete-entry-button"
 import { InlineStatus } from "@/components/inline-status"
 import { FolderHirerSelect } from "@/components/folder-hirer-select"
+import { FolderPaymentBadge } from "@/components/folder-payment-badge"
 import { listWorkTypes } from "@/lib/actions/work-types"
 
 import { folderNotes } from "@/lib/db/schema"
@@ -187,7 +188,7 @@ function FolderSection({ folder, entries, note, hirers }: { folder: string; entr
         <div className="flex items-center gap-3">
           <a href={`/api/invoice?folder=${encodeURIComponent(folder)}`} className="text-[11px] text-muted-foreground hover:text-foreground underline">Invoice</a>
           <span className="text-sm text-muted-foreground">${total.toFixed(2)}</span>
-          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ps.cls}`}>{ps.label}</span>
+          <FolderPaymentBadge folder={folder} current={ps.label} />
         </div>
       </div>
       <div className="border rounded-lg overflow-visible">
