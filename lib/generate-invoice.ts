@@ -218,22 +218,22 @@ export async function generateInvoicePdf({
     y += 12
 
     const bankCol1 = margin
-    const bankCol2 = margin + 160
-    const bankCol3 = margin + 320
-    const bankCol4 = margin + 430
+    const bankCol2 = margin + 120
+    const bankCol3 = margin + 310
+    const bankCol4 = margin + 400
 
-    doc.fontSize(8).font("Helvetica-Bold").fillColor("#888888")
+    doc.fontSize(7).font("Helvetica-Bold").fillColor("#888888")
     doc.text("ACCOUNT NAME", bankCol1, y)
     doc.text("Bank name", bankCol2, y)
     doc.text("Swift code", bankCol3, y)
     doc.text("Account # (IBAN)", bankCol4, y)
-    y += 14
+    y += 12
 
-    doc.fontSize(9).font("Helvetica").fillColor("#444444")
-    doc.text("Rafik fekih", bankCol1, y)
-    doc.text("Banque de Tunisie et des Emirats", bankCol2, y)
-    doc.text("BTEXTNTTXXX", bankCol3, y)
-    doc.text("TN59 24 031 201 7432 512201 60", bankCol4, y)
+    doc.fontSize(8).font("Helvetica").fillColor("#444444")
+    doc.text("Rafik fekih", bankCol1, y, { width: 110 })
+    doc.text("Banque de Tunisie et des Emirats", bankCol2, y, { width: 180 })
+    doc.text("BTEXTNTTXXX", bankCol3, y, { width: 80 })
+    doc.text("TN59 24 031 201 7432 512201 60", bankCol4, y, { width: 145 })
 
     doc.end()
   })
