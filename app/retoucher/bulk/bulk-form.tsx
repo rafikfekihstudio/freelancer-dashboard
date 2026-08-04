@@ -1,10 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useActionState } from "react"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
-import { createBulkWorkAction } from "@/lib/actions/works"
 import { ImageIcon } from "lucide-react"
 
 const PREVIEWABLE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]
@@ -25,7 +22,6 @@ type FileEntry = {
 
 export function BulkForm({ hirers, workTypes }: { hirers: UserOption[]; workTypes: string[] }) {
   const router = useRouter()
-  const [state, action, pending] = useActionState(createBulkWorkAction, null)
   const [entries, setEntries] = useState<FileEntry[]>([])
   const [hirerId, setHirerId] = useState("")
   const [folder, setFolder] = useState("")
@@ -33,12 +29,9 @@ export function BulkForm({ hirers, workTypes }: { hirers: UserOption[]; workType
   const [batchEditingType, setBatchEditingType] = useState("")
   const [batchPrice, setBatchPrice] = useState("")
   const [batchDelivery, setBatchDelivery] = useState("")
-  useEffect(() => {
-    if (state && "ok" in state && state.ok) {
-      router.push("/retoucher")
-      router.refresh()
-    }
-  }, [state, router])
+  const [uploading, setUploading] = useState(false)
+  const [progress, setProgress] = useState({ done: 0, total: 0 })
+  const [error, setError] = useState<string | null>(null)
 
   function handleFiles(files: FileList) {
     const newEntries: FileEntry[] = []
@@ -85,29 +78,51 @@ export function BulkForm({ hirers, workTypes }: { hirers: UserOption[]; workType
     )
   }
 
-  function handleSubmit(formData: FormData) {
-    formData.set("count", String(entries.length))
-    formData.set("hirerId", hirerId)
-    formData.set("folder", folder)
-    formData.set("privateNotes", privateNotes)
-    entries.forEach((entry, i) => {
-      formData.append(`image_${i}`, entry.file)
-      formData.set(`title_${i}`, entry.title)
-      formData.set(`originalFilename_${i}`, entry.originalFilename)
-      formData.set(`editingType_${i}`, entry.editingType)
-      formData.set(`price_${i}`, entry.price)
-      formData.set(`expectedDelivery_${i}`, entry.expectedDelivery)
-    })
-    action(formData)
+  async function handleSubmit() {
+    if (entries.length === 0) return
+    setUploading(true)
+    setError(null)
+    setProgress({ done: 0, total: entries.length })
+
+    let failed = 0
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i]
+      const fd = new FormData()
+      fd.append("title", entry.title)
+      fd.append("originalFilename", entry.originalFilename)
+      fd.append("editingType", entry.editingType)
+      fd.append("price", entry.price)
+      fd.append("expectedDelivery", entry.expectedDelivery)
+      if (hirerId) fd.append("hirerId", hirerId)
+      if (folder) fd.append("folder", folder)
+      if (privateNotes) fd.append("privateNotes", privateNotes)
+      if (entry.file) fd.append("image", entry.file)
+
+      try {
+        const res = await fetch("/api/auth/bulk-entry", { method: "POST", body: fd })
+        if (!res.ok) failed++
+      } catch {
+        failed++
+      }
+      setProgress({ done: i + 1, total: entries.length })
+    }
+
+    setUploading(false)
+    if (failed > 0) {
+      setError(`${failed} of ${entries.length} entries failed`)
+    } else {
+      router.push("/retoucher")
+      router.refresh()
+    }
   }
 
   return (
-    <form action={handleSubmit} className="space-y-6">
+    <div className="space-y-6">
       {/* File selector */}
       <div className="space-y-2">
         <label className="text-sm font-medium">Select Folder</label>
         <input
-          ref={(el) => { if (el) el.setAttribute("webkitdirectory", ""); }}
+          ref={(el) => { if (el) el.setAttribute("webkitdirectory", "") }}
           type="file"
           multiple
           accept="image/png,image/jpeg,image/webp,image/gif,image/avif,image/tiff,image/bmp,.tiff,.tif,.bmp,.heic,.heif"
@@ -281,17 +296,18 @@ export function BulkForm({ hirers, workTypes }: { hirers: UserOption[]; workType
         </div>
       )}
 
-      {state?.error && <p className="text-sm text-red-500">{state.error}</p>}
+      {error && <p className="text-sm text-red-500">{error}</p>}
 
       {entries.length > 0 && (
         <button
-          type="submit"
-          disabled={pending}
+          type="button"
+          onClick={handleSubmit}
+          disabled={uploading}
           className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-10 w-full items-center justify-center rounded-md px-4 text-sm font-medium transition-colors disabled:opacity-50"
         >
-          {pending ? `Uploading ${entries.length} entries...` : `Upload ${entries.length} Entries`}
+          {uploading ? `Uploading ${progress.done}/${progress.total}...` : `Upload ${entries.length} Entries`}
         </button>
       )}
-    </form>
+    </div>
   )
 }
