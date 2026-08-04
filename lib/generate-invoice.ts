@@ -16,6 +16,8 @@ export async function generateInvoicePdf({
   partyEmail,
   partyCountry,
   invoiceRef,
+  selectedImage,
+  discount,
 }: {
   folder: string
   entries: InvoiceEntry[]
@@ -25,20 +27,19 @@ export async function generateInvoicePdf({
   partyEmail: string
   partyCountry: string
   invoiceRef: string
+  selectedImage: string
+  discount: number
 }): Promise<ArrayBuffer> {
-  // Try to fetch a thumbnail for each group
-  const groupThumbnails: Record<string, Buffer | null> = {}
-  for (const entry of entries) {
-    const key = entry.editingType
-    if (!groupThumbnails[key] && entry.imagePath) {
-      try {
-        const res = await fetch(entry.imagePath)
-        if (res.ok) {
-          const ab = await res.arrayBuffer()
-          groupThumbnails[key] = Buffer.from(ab)
-        }
-      } catch {}
-    }
+  // Fetch the selected thumbnail image
+  let thumbnailBuffer: Buffer | null = null
+  if (selectedImage) {
+    try {
+      const res = await fetch(selectedImage)
+      if (res.ok) {
+        const ab = await res.arrayBuffer()
+        thumbnailBuffer = Buffer.from(ab)
+      }
+    } catch {}
   }
 
   return new Promise((resolve, reject) => {
@@ -104,6 +105,8 @@ export async function generateInvoicePdf({
     doc.fontSize(12).font("Helvetica-Bold").fillColor("#222222")
     doc.text(invoiceDate, dateX, 164)
 
+    const finalTotal = total - discount
+
     // ── Amount Due ──
     const amountX = pageW - margin - 120
     doc.fontSize(8).font("Helvetica-Bold").fillColor("#888888")
@@ -115,7 +118,7 @@ export async function generateInvoicePdf({
     doc.roundedRect(amountX, boxY, boxW, boxH, 4).fill("#2ECC71")
     doc.restore()
     doc.fontSize(16).font("Helvetica-Bold").fillColor("#FFFFFF")
-    doc.text(`$${total.toFixed(0)}`, amountX, boxY + 5, { width: boxW, align: "center" })
+    doc.text(`$${finalTotal.toFixed(0)}`, amountX, boxY + 5, { width: boxW, align: "center" })
 
     y = 215
 
@@ -157,10 +160,9 @@ export async function generateInvoicePdf({
       const rowY = y
 
       // Thumbnail
-      const thumbBuf = groupThumbnails[key]
-      if (thumbBuf) {
+      if (thumbnailBuffer) {
         try {
-          doc.image(thumbBuf, margin, rowY, { width: thumbW, height: thumbH })
+          doc.image(thumbnailBuffer, margin, rowY, { width: thumbW, height: thumbH })
         } catch {}
       } else {
         doc.save()
@@ -205,7 +207,7 @@ export async function generateInvoicePdf({
 
     doc.fontSize(14).font("Helvetica-Bold").fillColor("#222222")
     doc.text("Total", margin, y)
-    doc.text(`$${total.toFixed(2)}`, colSubtotal, y, { width: 80, align: "right" })
+    doc.text(`$${finalTotal.toFixed(2)}`, colSubtotal, y, { width: 80, align: "right" })
     y += 24
 
     // ── Thank you ──

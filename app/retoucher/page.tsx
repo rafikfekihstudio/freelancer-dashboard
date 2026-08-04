@@ -192,6 +192,7 @@ function FolderSection({ folder, entries, note, hirers }: { folder: string; entr
             folder={folder}
             defaultName={currentHirerName ?? ""}
             defaultEmail={entries.find((e: any) => e.hirerName === currentHirerName)?.hirerEmail ?? ""}
+            images={entries.map((e: any) => ({ id: e.id, src: e.imagePath, label: e.title }))}
             trigger={<span className="text-[11px] text-muted-foreground hover:text-foreground underline">Invoice</span>}
           />
           <span className="text-sm text-muted-foreground">${total.toFixed(2)}</span>

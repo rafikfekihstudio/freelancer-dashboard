@@ -18,6 +18,8 @@ export async function GET(req: Request) {
   const clientEmail = searchParams.get("clientEmail") ?? ""
   const clientCountry = searchParams.get("clientCountry") ?? ""
   const invoiceRef = searchParams.get("ref") ?? ""
+  const selectedImage = searchParams.get("image") ?? ""
+  const discount = Number(searchParams.get("discount")) || 0
 
   const uid = Number(session.user.id)
 
@@ -50,6 +52,8 @@ export async function GET(req: Request) {
       partyEmail: clientEmail || entries.find((e) => e.hirerEmail)?.hirerEmail || "",
       partyCountry: clientCountry,
       invoiceRef,
+      selectedImage,
+      discount,
     })
 
     return new NextResponse(pdf, {
@@ -89,6 +93,8 @@ export async function GET(req: Request) {
       partyEmail: clientEmail || entries.find((e) => e.retoucherEmail)?.retoucherEmail || "",
       partyCountry: clientCountry,
       invoiceRef,
+      selectedImage,
+      discount,
     })
 
     return new NextResponse(pdf, {
