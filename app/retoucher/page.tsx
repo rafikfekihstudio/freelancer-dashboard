@@ -13,6 +13,7 @@ import { DeleteEntryButton } from "@/components/delete-entry-button"
 import { InlineStatus } from "@/components/inline-status"
 import { FolderHirerSelect } from "@/components/folder-hirer-select"
 import { FolderPaymentBadge } from "@/components/folder-payment-badge"
+import { FolderStatusBadge } from "@/components/folder-status-badge"
 import { InvoiceForm } from "@/components/invoice-form"
 import { listWorkTypes } from "@/lib/actions/work-types"
 
@@ -171,8 +172,14 @@ function folderPaymentStatus(entries: any[]): { label: string; cls: string } {
   return { label: "unpaid", cls: "bg-gray-100 text-gray-700" }
 }
 
+function folderWorkStatus(entries: any[]): string {
+  const allDone = entries.every((e: any) => e.status === "completed")
+  return allDone ? "completed" : "in-progress"
+}
+
 function FolderSection({ folder, entries, note, hirers }: { folder: string; entries: any[]; note: string | null; hirers: { id: number; name: string; email: string }[] }) {
   const ps = folderPaymentStatus(entries)
+  const ws = folderWorkStatus(entries)
   const total = entries.reduce((s: number, e: any) => s + e.price, 0)
   const currentHirerId = entries.find((e: any) => e.hirerId)?.hirerId ?? null
   const currentHirerName = entries.find((e: any) => e.hirerName)?.hirerName ?? null
@@ -196,6 +203,7 @@ function FolderSection({ folder, entries, note, hirers }: { folder: string; entr
             trigger={<span className="text-[11px] text-muted-foreground hover:text-foreground underline">Invoice</span>}
           />
           <span className="text-sm text-muted-foreground">${total.toFixed(2)}</span>
+          <FolderStatusBadge folder={folder} current={ws} />
           <FolderPaymentBadge folder={folder} current={ps.label} />
         </div>
       </div>
