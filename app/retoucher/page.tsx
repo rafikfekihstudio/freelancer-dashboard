@@ -14,6 +14,7 @@ import { InlineStatus } from "@/components/inline-status"
 import { FolderHirerSelect } from "@/components/folder-hirer-select"
 import { FolderPaymentBadge } from "@/components/folder-payment-badge"
 import { FolderStatusBadge } from "@/components/folder-status-badge"
+import { FolderTypeBadge } from "@/components/folder-type-badge"
 import { InvoiceForm } from "@/components/invoice-form"
 import { listWorkTypes } from "@/lib/actions/work-types"
 
@@ -142,7 +143,7 @@ export default async function RetoucherPage({
         <>
           {folders.map((folder) => {
             const folderEntries = entries.filter((e) => e.folder === folder)
-            return <FolderSection key={folder} folder={folder} entries={folderEntries} note={noteMap[folder] ?? null} hirers={hirers} />
+            return <FolderSection key={folder} folder={folder} entries={folderEntries} note={noteMap[folder] ?? null} hirers={hirers} allTypes={allTypes} />
           })}
           {entries.filter((e) => !e.folder).length > 0 && (
             <section className="space-y-2">
@@ -177,12 +178,14 @@ function folderWorkStatus(entries: any[]): string {
   return allDone ? "completed" : "in-progress"
 }
 
-function FolderSection({ folder, entries, note, hirers }: { folder: string; entries: any[]; note: string | null; hirers: { id: number; name: string; email: string }[] }) {
+function FolderSection({ folder, entries, note, hirers, allTypes }: { folder: string; entries: any[]; note: string | null; hirers: { id: number; name: string; email: string }[]; allTypes: string[] }) {
   const ps = folderPaymentStatus(entries)
   const ws = folderWorkStatus(entries)
   const total = entries.reduce((s: number, e: any) => s + e.price, 0)
   const currentHirerId = entries.find((e: any) => e.hirerId)?.hirerId ?? null
   const currentHirerName = entries.find((e: any) => e.hirerName)?.hirerName ?? null
+  const types = [...new Set(entries.map((e: any) => e.editingType))]
+  const commonType = types.length === 1 ? types[0] : types.join(" + ")
   return (
     <section className="space-y-2">
       <div className="flex items-center justify-between border-b pb-1">
@@ -203,6 +206,7 @@ function FolderSection({ folder, entries, note, hirers }: { folder: string; entr
             trigger={<span className="text-[11px] text-muted-foreground hover:text-foreground underline">Invoice</span>}
           />
           <span className="text-sm text-muted-foreground">${total.toFixed(2)}</span>
+          <FolderTypeBadge folder={folder} currentType={commonType} allTypes={allTypes} />
           <FolderStatusBadge folder={folder} current={ws} />
           <FolderPaymentBadge folder={folder} current={ps.label} />
         </div>

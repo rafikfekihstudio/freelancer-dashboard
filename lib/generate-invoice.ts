@@ -62,7 +62,7 @@ export async function generateInvoicePdf({
     let y = 50
 
     // Left: Studio info
-    doc.fontSize(20).font("Helvetica-Bold").text("Rafic Fekih Studio", margin, y)
+    doc.fontSize(20).font("Helvetica-Bold").fillColor("#222222").text("Rafic Fekih Studio", margin, y)
     y += 28
     doc.fontSize(9).font("Helvetica").fillColor("#666666")
     doc.text("me@raficfekihstudio.com", margin, y)
@@ -71,45 +71,28 @@ export async function generateInvoicePdf({
     y += 13
     doc.text("Sousse, Tunisia", margin, y)
 
-    // Right: Invoice title + reference
+    // Right: Invoice title + reference (top-right area, does NOT overlap date/amount)
     doc.fontSize(32).font("Helvetica-Bold").fillColor("#222222")
     doc.text("Invoice", pageW - margin - 200, 50, { width: 200, align: "right" })
     doc.fontSize(10).font("Helvetica").fillColor("#666666")
     doc.text(`#${ref}`, pageW - margin - 200, 88, { width: 200, align: "right" })
 
-    y = 150
-
-    // ── Billed To ──
-    doc.fontSize(8).font("Helvetica-Bold").fillColor("#888888")
-    doc.text("BILLED TO", margin, y)
-    y += 16
-    doc.fontSize(11).font("Helvetica-Bold").fillColor("#222222")
-    const displayName = partyCompany ? `${partyName} - ${partyCompany}` : partyName
-    y = doc.text(displayName, margin, y, { width: 180 }).y + 4
-    if (partyEmail) {
-      doc.fontSize(9).font("Helvetica").fillColor("#444444")
-      y = doc.text(partyEmail, margin, y, { width: 180 }).y + 4
-    }
-    if (partyCountry) {
-      doc.fontSize(9).font("Helvetica").fillColor("#444444")
-      y = doc.text(partyCountry, margin, y, { width: 180 }).y + 4
-    }
-
-    // ── Invoice Date ──
+    // ── Invoice Date (middle column, below studio info) ──
     const dateX = margin + 200
-    const rightY = 50
+    const dateY = 140
     doc.fontSize(8).font("Helvetica-Bold").fillColor("#888888")
-    doc.text("INVOICE DATE", dateX, rightY)
+    doc.text("INVOICE DATE", dateX, dateY)
     doc.fontSize(12).font("Helvetica-Bold").fillColor("#222222")
-    doc.text(invoiceDate, dateX, rightY + 14)
+    doc.text(invoiceDate, dateX, dateY + 14)
 
     const finalTotal = total - discount
 
-    // ── Amount Due ──
+    // ── Amount Due (right side, below invoice title) ──
     const amountX = pageW - margin - 120
+    const amountY = 140
     doc.fontSize(8).font("Helvetica-Bold").fillColor("#888888")
-    doc.text("AMOUNT DUE", amountX, rightY, { width: 120, align: "right" })
-    const boxY = rightY + 14
+    doc.text("AMOUNT DUE", amountX, amountY, { width: 120, align: "right" })
+    const boxY = amountY + 14
     const boxW = 120
     const boxH = 28
     doc.save()
@@ -118,8 +101,25 @@ export async function generateInvoicePdf({
     doc.fontSize(16).font("Helvetica-Bold").fillColor("#FFFFFF")
     doc.text(`$${finalTotal.toFixed(0)}`, amountX, boxY + 5, { width: boxW, align: "center" })
 
+    // ── Billed To (below date/amount row) ──
+    y = boxY + boxH + 30
+    doc.fontSize(8).font("Helvetica-Bold").fillColor("#888888")
+    doc.text("BILLED TO", margin, y)
+    y += 16
+    doc.fontSize(11).font("Helvetica-Bold").fillColor("#222222")
+    const displayName = partyCompany ? `${partyName} - ${partyCompany}` : partyName
+    y = doc.text(displayName, margin, y, { width: 250 }).y + 4
+    if (partyEmail) {
+      doc.fontSize(9).font("Helvetica").fillColor("#444444")
+      y = doc.text(partyEmail, margin, y, { width: 250 }).y + 4
+    }
+    if (partyCountry) {
+      doc.fontSize(9).font("Helvetica").fillColor("#444444")
+      y = doc.text(partyCountry, margin, y, { width: 250 }).y + 4
+    }
+
     // ── Service type ──
-    y = Math.max(y, boxY + boxH + 10)
+    y += 10
     doc.fontSize(11).font("Helvetica-Bold").fillColor("#222222")
     doc.text("Photo Retouching", margin, y)
     y += 25
@@ -217,9 +217,9 @@ export async function generateInvoicePdf({
     y += 12
 
     const bankCol1 = margin
-    const bankCol2 = margin + 120
-    const bankCol3 = margin + 310
-    const bankCol4 = margin + 400
+    const bankCol2 = margin + 110
+    const bankCol3 = margin + 280
+    const bankCol4 = margin + 370
 
     doc.fontSize(7).font("Helvetica-Bold").fillColor("#888888")
     doc.text("ACCOUNT NAME", bankCol1, y)
@@ -229,10 +229,10 @@ export async function generateInvoicePdf({
     y += 12
 
     doc.fontSize(8).font("Helvetica").fillColor("#444444")
-    doc.text("Rafik fekih", bankCol1, y, { width: 110 })
-    doc.text("Banque de Tunisie et des Emirats", bankCol2, y, { width: 180 })
-    doc.text("BTEXTNTTXXX", bankCol3, y, { width: 80 })
-    doc.text("TN59 24 031 201 7432 512201 60", bankCol4, y, { width: 145 })
+    doc.text("Rafik fekih", bankCol1, y, { width: 100 })
+    doc.text("Banque de Tunisie et des Emirats", bankCol2, y, { width: 165 })
+    doc.text("BTEXTNTTXXX", bankCol3, y, { width: 85 })
+    doc.text("TN59 24 031 201 7432 512201 60", bankCol4, y, { width: 170 })
 
     doc.end()
   })
