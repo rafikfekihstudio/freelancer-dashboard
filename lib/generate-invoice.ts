@@ -85,16 +85,16 @@ export async function generateInvoicePdf({
     y += 16
     doc.fontSize(11).font("Helvetica-Bold").fillColor("#222222")
     const displayName = partyCompany ? `${partyName} - ${partyCompany}` : partyName
-    doc.text(displayName, margin, y)
+    doc.text(displayName, margin, y, { width: 180 })
     y += 16
     if (partyEmail) {
       doc.fontSize(9).font("Helvetica").fillColor("#444444")
-      doc.text(partyEmail, margin, y)
+      doc.text(partyEmail, margin, y, { width: 180 })
       y += 13
     }
     if (partyCountry) {
       doc.fontSize(9).font("Helvetica").fillColor("#444444")
-      doc.text(partyCountry, margin, y)
+      doc.text(partyCountry, margin, y, { width: 180 })
       y += 13
     }
 
