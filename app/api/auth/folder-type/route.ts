@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import { workEntries } from "@/lib/db/schema"
 import { eq, and } from "drizzle-orm"
 import { createNotification } from "@/lib/actions/notifications"
+import { ensureWorkType } from "@/lib/actions/work-types"
 
 export async function POST(req: Request) {
   const session = await auth()
@@ -17,6 +18,8 @@ export async function POST(req: Request) {
   const uid = Number(session.user.id)
   const allowed = session.user.role === "retoucher" || session.user.role === "admin"
   if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+
+  await ensureWorkType(editingType)
 
   await db.update(workEntries)
     .set({ editingType, updatedAt: new Date().toISOString() })

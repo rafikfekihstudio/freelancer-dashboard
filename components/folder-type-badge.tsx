@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation"
 export function FolderTypeBadge({ folder, currentType, allTypes }: { folder: string; currentType: string; allTypes: string[] }) {
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [newType, setNewType] = useState("")
   const router = useRouter()
   const ref = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!open) return
@@ -18,13 +20,17 @@ export function FolderTypeBadge({ folder, currentType, allTypes }: { folder: str
     return () => document.removeEventListener("mousedown", handleClick)
   }, [open])
 
-  async function handleSelect(value: string) {
-    if (value === currentType) return setOpen(false)
+  useEffect(() => {
+    if (open) inputRef.current?.focus()
+  }, [open])
+
+  async function apply(value: string) {
+    if (!value.trim() || value === currentType) return setOpen(false)
     setBusy(true)
     await fetch("/api/auth/folder-type", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ folder, editingType: value }),
+      body: JSON.stringify({ folder, editingType: value.trim() }),
     })
     setBusy(false)
     setOpen(false)
@@ -41,11 +47,24 @@ export function FolderTypeBadge({ folder, currentType, allTypes }: { folder: str
         {currentType}
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-50 flex flex-col rounded-md border bg-card shadow-lg min-w-[140px] max-h-[240px] overflow-y-auto">
+        <div className="absolute right-0 top-full z-50 flex flex-col rounded-md border bg-card shadow-lg min-w-[160px] max-h-[260px] overflow-y-auto">
+          <div className="border-b px-2 py-1.5">
+            <input
+              ref={inputRef}
+              value={newType}
+              onChange={(e) => setNewType(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newType.trim()) apply(newType)
+                if (e.key === "Escape") setOpen(false)
+              }}
+              placeholder="New type..."
+              className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+            />
+          </div>
           {allTypes.map((t) => (
             <button
               key={t}
-              onClick={() => handleSelect(t)}
+              onClick={() => apply(t)}
               className={`rounded-none px-3 py-1.5 text-xs text-left hover:bg-muted ${t === currentType ? "font-semibold" : ""}`}
             >
               {t}
