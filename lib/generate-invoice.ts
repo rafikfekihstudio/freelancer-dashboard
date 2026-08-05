@@ -97,18 +97,19 @@ export async function generateInvoicePdf({
 
     // ── Invoice Date ──
     const dateX = margin + 200
+    const rightY = 50
     doc.fontSize(8).font("Helvetica-Bold").fillColor("#888888")
-    doc.text("INVOICE DATE", dateX, 150)
+    doc.text("INVOICE DATE", dateX, rightY)
     doc.fontSize(12).font("Helvetica-Bold").fillColor("#222222")
-    doc.text(invoiceDate, dateX, 164)
+    doc.text(invoiceDate, dateX, rightY + 14)
 
     const finalTotal = total - discount
 
     // ── Amount Due ──
     const amountX = pageW - margin - 120
     doc.fontSize(8).font("Helvetica-Bold").fillColor("#888888")
-    doc.text("AMOUNT DUE", amountX, 150, { width: 120, align: "right" })
-    const boxY = 168
+    doc.text("AMOUNT DUE", amountX, rightY, { width: 120, align: "right" })
+    const boxY = rightY + 14
     const boxW = 120
     const boxH = 28
     doc.save()
@@ -117,9 +118,8 @@ export async function generateInvoicePdf({
     doc.fontSize(16).font("Helvetica-Bold").fillColor("#FFFFFF")
     doc.text(`$${finalTotal.toFixed(0)}`, amountX, boxY + 5, { width: boxW, align: "center" })
 
-    y = 215
-
     // ── Service type ──
+    y = Math.max(y, boxY + boxH + 10)
     doc.fontSize(11).font("Helvetica-Bold").fillColor("#222222")
     doc.text("Photo Retouching", margin, y)
     y += 25
