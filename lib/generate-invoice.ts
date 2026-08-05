@@ -203,6 +203,21 @@ export async function generateInvoicePdf({
     y += 10
 
     doc.fontSize(14).font("Helvetica-Bold").fillColor("#222222")
+    doc.text("Subtotal", margin, y)
+    doc.text(`$${total.toFixed(2)}`, colSubtotal, y, { width: 80, align: "right" })
+    y += 22
+
+    if (discount > 0) {
+      doc.fontSize(11).font("Helvetica").fillColor("#CC3333")
+      doc.text("Discount", margin, y)
+      doc.text(`-$${discount.toFixed(2)}`, colSubtotal, y, { width: 80, align: "right" })
+      y += 20
+
+      doc.moveTo(margin, y).lineTo(pageW - margin, y).strokeColor("#DDDDDD").lineWidth(0.5).stroke()
+      y += 10
+    }
+
+    doc.fontSize(14).font("Helvetica-Bold").fillColor("#222222")
     doc.text("Total", margin, y)
     doc.text(`$${finalTotal.toFixed(2)}`, colSubtotal, y, { width: 80, align: "right" })
     y += 24
