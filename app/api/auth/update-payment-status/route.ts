@@ -22,7 +22,11 @@ export async function POST(req: Request) {
   if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   await db.update(workEntries)
-    .set({ paymentStatus: status, updatedAt: new Date().toISOString() })
+    .set({
+      paymentStatus: status,
+      amountPaid: status === "paid" ? entry.price : status === "unpaid" ? 0 : entry.price / 2,
+      updatedAt: new Date().toISOString(),
+    })
     .where(eq(workEntries.id, id))
     .run()
 

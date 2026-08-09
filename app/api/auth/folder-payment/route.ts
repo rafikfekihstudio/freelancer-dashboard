@@ -18,19 +18,25 @@ export async function POST(req: Request) {
   const allowed = session.user.role === "retoucher" || session.user.role === "admin"
   if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
-  await db.update(workEntries)
-    .set({ paymentStatus: status, updatedAt: new Date().toISOString() })
-    .where(and(eq(workEntries.folder, folder), eq(workEntries.retoucherId, uid)))
-    .run()
-
-  const first = await db.select()
+  const folderEntries = await db.select()
     .from(workEntries)
     .where(and(eq(workEntries.folder, folder), eq(workEntries.retoucherId, uid)))
-    .get()
+    .all()
 
-  if (first?.hirerId) {
+  for (const entry of folderEntries) {
+    await db.update(workEntries)
+      .set({
+        paymentStatus: status,
+        amountPaid: status === "paid" ? entry.price : status === "unpaid" ? 0 : entry.price / 2,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(workEntries.id, entry.id))
+      .run()
+  }
+
+  if (folderEntries[0]?.hirerId) {
     await createNotification({
-      userId: first.hirerId,
+      userId: folderEntries[0].hirerId,
       message: `${session.user.name} marked all entries in "${folder}" as ${status}`,
       link: `/hirer`,
     })
