@@ -20,6 +20,7 @@ export async function GET(req: Request) {
   const invoiceRef = searchParams.get("ref") ?? ""
   const selectedImage = searchParams.get("image") ?? ""
   const discount = Number(searchParams.get("discount")) || 0
+  const showBankDetails = searchParams.get("showBank") !== "false"
 
   const uid = Number(session.user.id)
 
@@ -54,6 +55,7 @@ export async function GET(req: Request) {
       invoiceRef,
       selectedImage,
       discount,
+      showBankDetails,
     })
 
     return new NextResponse(pdf, {
@@ -95,6 +97,7 @@ export async function GET(req: Request) {
       invoiceRef,
       selectedImage,
       discount,
+      showBankDetails,
     })
 
     return new NextResponse(pdf, {

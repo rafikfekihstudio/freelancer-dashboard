@@ -18,6 +18,7 @@ export async function generateInvoicePdf({
   invoiceRef,
   selectedImage,
   discount,
+  showBankDetails,
 }: {
   folder: string
   entries: InvoiceEntry[]
@@ -29,6 +30,7 @@ export async function generateInvoicePdf({
   invoiceRef: string
   selectedImage: string
   discount: number
+  showBankDetails: boolean
 }): Promise<ArrayBuffer> {
   // Fetch the selected thumbnail image
   let thumbnailBuffer: Buffer | null = null
@@ -227,27 +229,29 @@ export async function generateInvoicePdf({
     doc.text("Thank you for your collaboration", margin, y)
     y += 30
 
-    // ── Bank details ──
-    doc.moveTo(margin, y).lineTo(pageW - margin, y).strokeColor("#DDDDDD").lineWidth(0.5).stroke()
-    y += 12
+    // ── Bank details (optional) ──
+    if (showBankDetails) {
+      doc.moveTo(margin, y).lineTo(pageW - margin, y).strokeColor("#DDDDDD").lineWidth(0.5).stroke()
+      y += 12
 
-    const bankCol1 = margin
-    const bankCol2 = margin + 110
-    const bankCol3 = margin + 280
-    const bankCol4 = margin + 370
+      const bankCol1 = margin
+      const bankCol2 = margin + 110
+      const bankCol3 = margin + 280
+      const bankCol4 = margin + 370
 
-    doc.fontSize(7).font("Helvetica-Bold").fillColor("#888888")
-    doc.text("ACCOUNT NAME", bankCol1, y)
-    doc.text("Bank name", bankCol2, y)
-    doc.text("Swift code", bankCol3, y)
-    doc.text("Account # (IBAN)", bankCol4, y)
-    y += 12
+      doc.fontSize(7).font("Helvetica-Bold").fillColor("#888888")
+      doc.text("ACCOUNT NAME", bankCol1, y)
+      doc.text("Bank name", bankCol2, y)
+      doc.text("Swift code", bankCol3, y)
+      doc.text("Account # (IBAN)", bankCol4, y)
+      y += 12
 
-    doc.fontSize(8).font("Helvetica").fillColor("#444444")
-    doc.text("Rafik fekih", bankCol1, y, { width: 100 })
-    doc.text("Banque de Tunisie et des Emirats", bankCol2, y, { width: 165 })
-    doc.text("BTEXTNTTXXX", bankCol3, y, { width: 85 })
-    doc.text("TN59 24 031 201 7432 512201 60", bankCol4, y, { width: 170 })
+      doc.fontSize(8).font("Helvetica").fillColor("#444444")
+      doc.text("Rafik fekih", bankCol1, y, { width: 100 })
+      doc.text("Banque de Tunisie et des Emirats", bankCol2, y, { width: 165 })
+      doc.text("BTEXTNTTXXX", bankCol3, y, { width: 85 })
+      doc.text("TN59 24 031 201 7432 512201 60", bankCol4, y, { width: 170 })
+    }
 
     doc.end()
   })

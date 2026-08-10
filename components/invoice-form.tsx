@@ -19,6 +19,7 @@ export function InvoiceForm({ folder, defaultName, defaultEmail, images, trigger
   const [invoiceRef, setInvoiceRef] = useState("")
   const [selectedImage, setSelectedImage] = useState<string>(images.find((i) => i.src)?.src ?? "")
   const [discount, setDiscount] = useState("")
+  const [showBankDetails, setShowBankDetails] = useState(true)
   const [submitting, setSubmitting] = useState(false)
 
   function handleDownload() {
@@ -33,6 +34,7 @@ export function InvoiceForm({ folder, defaultName, defaultEmail, images, trigger
       ref: invoiceRef.trim(),
       image: selectedImage,
       discount: discount.trim(),
+      showBank: String(showBankDetails),
     })
     const link = document.createElement("a")
     link.href = `/api/invoice?${params.toString()}`
@@ -111,6 +113,16 @@ export function InvoiceForm({ folder, defaultName, defaultEmail, images, trigger
                   placeholder="0"
                   className="border-input bg-background ring-offset-background flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="showBankDetails"
+                  checked={showBankDetails}
+                  onChange={(e) => setShowBankDetails(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <label htmlFor="showBankDetails" className="text-sm font-medium">Include bank details</label>
               </div>
             </div>
 
