@@ -5,32 +5,45 @@ import { workEntries, users } from "@/lib/db/schema"
 import { eq, and, inArray } from "drizzle-orm"
 import { generateInvoicePdf } from "@/lib/generate-invoice"
 
+type FolderPayload = {
+  name: string
+  thumbnail: string
+  notes: string
+}
+
 export async function GET(req: Request) {
   const session = await auth()
   if (!session) return new NextResponse("Unauthorized", { status: 401 })
 
   const { searchParams } = new URL(req.url)
   const folder = searchParams.get("folder")
-  const foldersParam = searchParams.get("folders")
-  const folderList = foldersParam
-    ? foldersParam.split(",").map((f) => f.trim()).filter(Boolean)
-    : folder
-      ? [folder]
-      : []
+  const foldersJson = searchParams.get("folders")
 
-  if (folderList.length === 0) return new NextResponse("Missing folder(s)", { status: 400 })
+  let folderPayloads: FolderPayload[] = []
 
+  if (foldersJson) {
+    try {
+      folderPayloads = JSON.parse(foldersJson)
+    } catch {
+      return new NextResponse("Invalid folders param", { status: 400 })
+    }
+  } else if (folder) {
+    folderPayloads = [{ name: folder, thumbnail: searchParams.get("image") ?? "", notes: "" }]
+  }
+
+  if (folderPayloads.length === 0) return new NextResponse("Missing folder(s)", { status: 400 })
+
+  const folderNames = folderPayloads.map((f) => f.name)
   const clientName = searchParams.get("clientName") ?? ""
   const clientCompany = searchParams.get("clientCompany") ?? ""
   const clientEmail = searchParams.get("clientEmail") ?? ""
   const clientCountry = searchParams.get("clientCountry") ?? ""
   const invoiceRef = searchParams.get("ref") ?? ""
-  const selectedImage = searchParams.get("image") ?? ""
   const discount = Number(searchParams.get("discount")) || 0
   const showBankDetails = searchParams.get("showBank") !== "false"
 
   const uid = Number(session.user.id)
-  const label = folderList.length === 1 ? folderList[0] : "combined"
+  const label = folderNames.length === 1 ? folderNames[0] : "combined"
 
   if (session.user.role === "retoucher") {
     const entries = await db
@@ -40,30 +53,40 @@ export async function GET(req: Request) {
         editingType: workEntries.editingType,
         price: workEntries.price,
         imagePath: workEntries.imagePath,
+        folder: workEntries.folder,
         hirerName: users.name,
         hirerEmail: users.email,
       })
       .from(workEntries)
       .leftJoin(users, eq(workEntries.hirerId, users.id))
-      .where(and(eq(workEntries.retoucherId, uid), inArray(workEntries.folder, folderList)))
+      .where(and(eq(workEntries.retoucherId, uid), inArray(workEntries.folder, folderNames)))
       .all()
 
     if (entries.length === 0) return new NextResponse("Not found", { status: 404 })
 
     const total = entries.reduce((s, e) => s + e.price, 0)
 
+    // Merge per-folder thumbnail/notes into entries
+    const folderMap = Object.fromEntries(folderPayloads.map((f) => [f.name, f]))
+    const enrichedEntries = entries.map((e) => ({
+      ...e,
+      folderThumbnail: folderMap[e.folder ?? ""]?.thumbnail || e.imagePath,
+      folderNotes: folderMap[e.folder ?? ""]?.notes || "",
+    }))
+
     const pdf = await generateInvoicePdf({
       folder: label,
-      entries,
+      entries: enrichedEntries,
       total,
       partyName: clientName || entries.find((e) => e.hirerName)?.hirerName || "—",
       partyCompany: clientCompany,
       partyEmail: clientEmail || entries.find((e) => e.hirerEmail)?.hirerEmail || "",
       partyCountry: clientCountry,
       invoiceRef,
-      selectedImage,
+      selectedImage: "",
       discount,
       showBankDetails,
+      folderPayloads,
     })
 
     return new NextResponse(pdf, {
@@ -82,30 +105,39 @@ export async function GET(req: Request) {
         editingType: workEntries.editingType,
         price: workEntries.price,
         imagePath: workEntries.imagePath,
+        folder: workEntries.folder,
         retoucherName: users.name,
         retoucherEmail: users.email,
       })
       .from(workEntries)
       .innerJoin(users, eq(workEntries.retoucherId, users.id))
-      .where(and(eq(workEntries.hirerId, uid), inArray(workEntries.folder, folderList)))
+      .where(and(eq(workEntries.hirerId, uid), inArray(workEntries.folder, folderNames)))
       .all()
 
     if (entries.length === 0) return new NextResponse("Not found", { status: 404 })
 
     const total = entries.reduce((s, e) => s + e.price, 0)
 
+    const folderMap = Object.fromEntries(folderPayloads.map((f) => [f.name, f]))
+    const enrichedEntries = entries.map((e) => ({
+      ...e,
+      folderThumbnail: folderMap[e.folder ?? ""]?.thumbnail || e.imagePath,
+      folderNotes: folderMap[e.folder ?? ""]?.notes || "",
+    }))
+
     const pdf = await generateInvoicePdf({
       folder: label,
-      entries,
+      entries: enrichedEntries,
       total,
       partyName: clientName || entries.find((e) => e.retoucherName)?.retoucherName || "—",
       partyCompany: clientCompany,
       partyEmail: clientEmail || entries.find((e) => e.retoucherEmail)?.retoucherEmail || "",
       partyCountry: clientCountry,
       invoiceRef,
-      selectedImage,
+      selectedImage: "",
       discount,
       showBankDetails,
+      folderPayloads,
     })
 
     return new NextResponse(pdf, {

@@ -5,6 +5,27 @@ type InvoiceEntry = {
   editingType: string
   price: number
   imagePath?: string | null
+  folder?: string | null
+  folderThumbnail?: string | null
+  folderNotes?: string
+}
+
+type FolderPayload = {
+  name: string
+  thumbnail: string
+  notes: string
+}
+
+async function fetchThumb(url: string): Promise<Buffer | null> {
+  if (!url) return null
+  try {
+    const res = await fetch(url)
+    if (res.ok) {
+      const ab = await res.arrayBuffer()
+      return Buffer.from(ab)
+    }
+  } catch {}
+  return null
 }
 
 export async function generateInvoicePdf({
@@ -19,6 +40,7 @@ export async function generateInvoicePdf({
   selectedImage,
   discount,
   showBankDetails,
+  folderPayloads,
 }: {
   folder: string
   entries: InvoiceEntry[]
@@ -31,17 +53,19 @@ export async function generateInvoicePdf({
   selectedImage: string
   discount: number
   showBankDetails: boolean
+  folderPayloads?: FolderPayload[]
 }): Promise<ArrayBuffer> {
-  // Fetch the selected thumbnail image
-  let thumbnailBuffer: Buffer | null = null
-  if (selectedImage) {
-    try {
-      const res = await fetch(selectedImage)
-      if (res.ok) {
-        const ab = await res.arrayBuffer()
-        thumbnailBuffer = Buffer.from(ab)
-      }
-    } catch {}
+  // Pre-fetch per-folder thumbnails
+  const thumbBuffers: Record<string, Buffer | null> = {}
+  if (folderPayloads && folderPayloads.length > 0) {
+    for (const fp of folderPayloads) {
+      if (fp.thumbnail) thumbBuffers[fp.name] = await fetchThumb(fp.thumbnail)
+    }
+  }
+  // Fallback: single selectedImage
+  let singleThumbnail: Buffer | null = null
+  if (selectedImage && Object.keys(thumbBuffers).length === 0) {
+    singleThumbnail = await fetchThumb(selectedImage)
   }
 
   return new Promise((resolve, reject) => {
@@ -141,13 +165,24 @@ export async function generateInvoicePdf({
     doc.moveTo(margin, y).lineTo(pageW - margin, y).strokeColor("#DDDDDD").lineWidth(0.5).stroke()
     y += 8
 
-    // ── Table rows: group by editingType ──
-    const groups: Record<string, { entries: InvoiceEntry[]; subtotal: number }> = {}
-    for (const entry of entries) {
-      const key = entry.editingType
-      if (!groups[key]) groups[key] = { entries: [], subtotal: 0 }
-      groups[key].entries.push(entry)
-      groups[key].subtotal += entry.price
+    // ── Table rows: group by editingType (single folder) or by folder (multi-folder) ──
+    const isMultiFolder = folderPayloads && folderPayloads.length > 1
+    const groups: Record<string, { entries: InvoiceEntry[]; subtotal: number; notes?: string }> = {}
+
+    if (isMultiFolder) {
+      for (const entry of entries) {
+        const key = entry.folder || "Unknown"
+        if (!groups[key]) groups[key] = { entries: [], subtotal: 0, notes: folderPayloads!.find((f) => f.name === key)?.notes || "" }
+        groups[key].entries.push(entry)
+        groups[key].subtotal += entry.price
+      }
+    } else {
+      for (const entry of entries) {
+        const key = entry.editingType
+        if (!groups[key]) groups[key] = { entries: [], subtotal: 0 }
+        groups[key].entries.push(entry)
+        groups[key].subtotal += entry.price
+      }
     }
 
     const groupKeys = Object.keys(groups)
@@ -158,10 +193,11 @@ export async function generateInvoicePdf({
       const rate = count > 0 ? group.subtotal / count : 0
       const rowY = y
 
-      // Thumbnail
-      if (thumbnailBuffer) {
+      // Thumbnail: use per-folder thumbnail or fallback
+      const folderThumb = isMultiFolder ? (thumbBuffers[key] ?? singleThumbnail) : singleThumbnail
+      if (folderThumb) {
         try {
-          doc.image(thumbnailBuffer, margin, rowY, { width: thumbW, height: thumbH })
+          doc.image(folderThumb, margin, rowY, { width: thumbW, height: thumbH })
         } catch {}
       } else {
         doc.save()
@@ -182,15 +218,22 @@ export async function generateInvoicePdf({
       doc.text(key, colTitle, rowY + 14)
       y += 14
 
+      // Per-folder notes
+      if (group.notes) {
+        doc.fontSize(8).font("Helvetica-Oblique").fillColor("#777777")
+        doc.text(group.notes, colTitle, y, { width: 260 })
+        y = doc.y + 4
+      }
+
       // Rate x count
       doc.fontSize(9).font("Helvetica").fillColor("#444444")
       doc.text(`$${rate.toFixed(0)}*${count}`, colSubtotal, rowY, { width: 80, align: "right" })
 
       // Subtotal
       doc.fontSize(10).font("Helvetica-Bold").fillColor("#222222")
-      doc.text(`$${group.subtotal.toFixed(0)}`, colSubtotal, rowY + 14, { width: 80, align: "right" })
+      doc.text(`$${group.subtotal.toFixed(0)}`, colSubtotal, y - 14, { width: 80, align: "right" })
 
-      y += 20
+      y += 6
 
       // Separator line between rows
       if (i < groupKeys.length - 1) {
