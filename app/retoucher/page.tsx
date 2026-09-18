@@ -16,6 +16,7 @@ import { FolderPaymentBadge } from "@/components/folder-payment-badge"
 import { FolderStatusBadge } from "@/components/folder-status-badge"
 import { FolderTypeBadge } from "@/components/folder-type-badge"
 import { InvoiceForm } from "@/components/invoice-form"
+import { MultiInvoiceForm } from "@/components/multi-invoice-form"
 import { listWorkTypes } from "@/lib/actions/work-types"
 import { FolderSection } from "@/components/folder-section"
 
@@ -103,12 +104,21 @@ export default async function RetoucherPage({
 
   const folders = [...new Set(entries.map((e) => e.folder).filter(Boolean))] as string[]
 
+  const folderData = folders.map((f) => ({
+    name: f,
+    entries: entries.filter((e) => e.folder === f).map((e) => ({ id: e.id, src: e.imagePath, label: e.title, price: e.price })),
+  }))
+
   return (
     <DashboardShell>
       <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-semibold">My Work</h1>
         <div className="flex gap-2">
+          <MultiInvoiceForm
+            folders={folderData}
+            trigger={<span className="bg-secondary text-secondary-foreground hover:bg-secondary/80 inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors">Invoice</span>}
+          />
           <CsvDownloadButton label="Download CSV" fetchCsv={exportWorkEntriesCsv} filename="work-entries.csv" />
           <Link href="/retoucher/bulk" className="bg-secondary text-secondary-foreground hover:bg-secondary/80 inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors">
             Bulk Upload

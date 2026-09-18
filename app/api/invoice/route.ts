@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { workEntries, users } from "@/lib/db/schema"
-import { eq, and } from "drizzle-orm"
+import { eq, and, inArray } from "drizzle-orm"
 import { generateInvoicePdf } from "@/lib/generate-invoice"
 
 export async function GET(req: Request) {
@@ -11,7 +11,14 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url)
   const folder = searchParams.get("folder")
-  if (!folder) return new NextResponse("Missing folder", { status: 400 })
+  const foldersParam = searchParams.get("folders")
+  const folderList = foldersParam
+    ? foldersParam.split(",").map((f) => f.trim()).filter(Boolean)
+    : folder
+      ? [folder]
+      : []
+
+  if (folderList.length === 0) return new NextResponse("Missing folder(s)", { status: 400 })
 
   const clientName = searchParams.get("clientName") ?? ""
   const clientCompany = searchParams.get("clientCompany") ?? ""
@@ -23,6 +30,7 @@ export async function GET(req: Request) {
   const showBankDetails = searchParams.get("showBank") !== "false"
 
   const uid = Number(session.user.id)
+  const label = folderList.length === 1 ? folderList[0] : "combined"
 
   if (session.user.role === "retoucher") {
     const entries = await db
@@ -37,7 +45,7 @@ export async function GET(req: Request) {
       })
       .from(workEntries)
       .leftJoin(users, eq(workEntries.hirerId, users.id))
-      .where(and(eq(workEntries.retoucherId, uid), eq(workEntries.folder, folder)))
+      .where(and(eq(workEntries.retoucherId, uid), inArray(workEntries.folder, folderList)))
       .all()
 
     if (entries.length === 0) return new NextResponse("Not found", { status: 404 })
@@ -45,7 +53,7 @@ export async function GET(req: Request) {
     const total = entries.reduce((s, e) => s + e.price, 0)
 
     const pdf = await generateInvoicePdf({
-      folder,
+      folder: label,
       entries,
       total,
       partyName: clientName || entries.find((e) => e.hirerName)?.hirerName || "—",
@@ -61,7 +69,7 @@ export async function GET(req: Request) {
     return new NextResponse(pdf, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="invoice-${encodeURIComponent(folder)}.pdf"`,
+        "Content-Disposition": `attachment; filename="invoice-${encodeURIComponent(label)}.pdf"`,
       },
     })
   }
@@ -79,7 +87,7 @@ export async function GET(req: Request) {
       })
       .from(workEntries)
       .innerJoin(users, eq(workEntries.retoucherId, users.id))
-      .where(and(eq(workEntries.hirerId, uid), eq(workEntries.folder, folder)))
+      .where(and(eq(workEntries.hirerId, uid), inArray(workEntries.folder, folderList)))
       .all()
 
     if (entries.length === 0) return new NextResponse("Not found", { status: 404 })
@@ -87,7 +95,7 @@ export async function GET(req: Request) {
     const total = entries.reduce((s, e) => s + e.price, 0)
 
     const pdf = await generateInvoicePdf({
-      folder,
+      folder: label,
       entries,
       total,
       partyName: clientName || entries.find((e) => e.retoucherName)?.retoucherName || "—",
@@ -103,7 +111,7 @@ export async function GET(req: Request) {
     return new NextResponse(pdf, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="invoice-${encodeURIComponent(folder)}.pdf"`,
+        "Content-Disposition": `attachment; filename="invoice-${encodeURIComponent(label)}.pdf"`,
       },
     })
   }
