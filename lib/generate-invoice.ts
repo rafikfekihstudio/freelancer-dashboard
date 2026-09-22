@@ -239,6 +239,10 @@ export async function generateInvoicePdf({
 
       y += 6
 
+      // Keep the row tall enough so separators never cut through the thumbnail
+      const rowMinY = rowY + thumbH + 6
+      if (y < rowMinY) y = rowMinY
+
       // Separator line between rows
       if (i < groupKeys.length - 1) {
         doc.moveTo(margin, y).lineTo(pageW - margin, y).strokeColor("#EEEEEE").lineWidth(0.5).stroke()
