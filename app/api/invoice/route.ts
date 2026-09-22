@@ -39,6 +39,7 @@ export async function GET(req: Request) {
   const clientEmail = searchParams.get("clientEmail") ?? ""
   const clientCountry = searchParams.get("clientCountry") ?? ""
   const invoiceRef = searchParams.get("ref") ?? ""
+  const invoiceDate = searchParams.get("date") ?? ""
   const discount = Number(searchParams.get("discount")) || 0
   const showBankDetails = searchParams.get("showBank") !== "false"
 
@@ -83,6 +84,7 @@ export async function GET(req: Request) {
       partyEmail: clientEmail || entries.find((e) => e.hirerEmail)?.hirerEmail || "",
       partyCountry: clientCountry,
       invoiceRef,
+      invoiceDate,
       selectedImage: "",
       discount,
       showBankDetails,
@@ -134,6 +136,7 @@ export async function GET(req: Request) {
       partyEmail: clientEmail || entries.find((e) => e.retoucherEmail)?.retoucherEmail || "",
       partyCountry: clientCountry,
       invoiceRef,
+      invoiceDate,
       selectedImage: "",
       discount,
       showBankDetails,

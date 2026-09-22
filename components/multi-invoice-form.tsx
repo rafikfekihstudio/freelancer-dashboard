@@ -24,6 +24,11 @@ type Props = {
   trigger: React.ReactNode
 }
 
+function todayISO() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+
 export function MultiInvoiceForm({ folders, trigger }: Props) {
   const [open, setOpen] = useState(false)
   const [selectedFolders, setSelectedFolders] = useState<string[]>([])
@@ -34,6 +39,7 @@ export function MultiInvoiceForm({ folders, trigger }: Props) {
   const [clientEmail, setClientEmail] = useState("")
   const [clientCountry, setClientCountry] = useState("")
   const [invoiceRef, setInvoiceRef] = useState("")
+  const [invoiceDate, setInvoiceDate] = useState(todayISO())
   const [globalDiscount, setGlobalDiscount] = useState("")
   const [showBankDetails, setShowBankDetails] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -83,6 +89,7 @@ export function MultiInvoiceForm({ folders, trigger }: Props) {
       clientEmail: clientEmail.trim(),
       clientCountry: clientCountry.trim(),
       ref: invoiceRef.trim(),
+      date: invoiceDate,
       discount: globalDiscount.trim(),
       showBank: String(showBankDetails),
     })
@@ -237,6 +244,15 @@ export function MultiInvoiceForm({ folders, trigger }: Props) {
                     value={invoiceRef}
                     onChange={(e) => setInvoiceRef(e.target.value)}
                     placeholder="e.g. RF012026"
+                    className="border-input bg-background ring-offset-background flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Invoice Date</label>
+                  <input
+                    type="date"
+                    value={invoiceDate}
+                    onChange={(e) => setInvoiceDate(e.target.value)}
                     className="border-input bg-background ring-offset-background flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   />
                 </div>

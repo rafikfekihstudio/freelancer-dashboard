@@ -37,6 +37,7 @@ export async function generateInvoicePdf({
   partyEmail,
   partyCountry,
   invoiceRef,
+  invoiceDate,
   selectedImage,
   discount,
   showBankDetails,
@@ -50,6 +51,7 @@ export async function generateInvoicePdf({
   partyEmail: string
   partyCountry: string
   invoiceRef: string
+  invoiceDate?: string
   selectedImage: string
   discount: number
   showBankDetails: boolean
@@ -81,7 +83,9 @@ export async function generateInvoicePdf({
     const pageW = doc.page.width
     const margin = 50
     const now = new Date()
-    const invoiceDate = `${String(now.getDate()).padStart(2, "0")}.${String(now.getMonth() + 1).padStart(2, "0")}.${now.getFullYear()}`
+    const parsedDate = invoiceDate?.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+    const dateObj = parsedDate ? new Date(Number(parsedDate[1]), Number(parsedDate[2]) - 1, Number(parsedDate[3])) : now
+    const invoiceDateStr = `${String(dateObj.getDate()).padStart(2, "0")}.${String(dateObj.getMonth() + 1).padStart(2, "0")}.${dateObj.getFullYear()}`
     const ref = invoiceRef || `RF${String(now.getMonth() + 1).padStart(2, "0")}${now.getFullYear()}`
 
     // ── Header ──
@@ -109,7 +113,7 @@ export async function generateInvoicePdf({
     doc.fontSize(8).font("Helvetica-Bold").fillColor("#888888")
     doc.text("INVOICE DATE", dateX, dateY)
     doc.fontSize(12).font("Helvetica-Bold").fillColor("#222222")
-    doc.text(invoiceDate, dateX, dateY + 14)
+    doc.text(invoiceDateStr, dateX, dateY + 14)
 
     const finalTotal = total - discount
 

@@ -10,6 +10,11 @@ type Props = {
   trigger: React.ReactNode
 }
 
+function todayISO() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+
 export function InvoiceForm({ folder, defaultName, defaultEmail, images, trigger }: Props) {
   const [open, setOpen] = useState(false)
   const [clientName, setClientName] = useState(defaultName)
@@ -17,6 +22,7 @@ export function InvoiceForm({ folder, defaultName, defaultEmail, images, trigger
   const [clientEmail, setClientEmail] = useState(defaultEmail)
   const [clientCountry, setClientCountry] = useState("")
   const [invoiceRef, setInvoiceRef] = useState("")
+  const [invoiceDate, setInvoiceDate] = useState(todayISO())
   const [selectedImage, setSelectedImage] = useState<string>(images.find((i) => i.src)?.src ?? "")
   const [discount, setDiscount] = useState("")
   const [showBankDetails, setShowBankDetails] = useState(true)
@@ -32,6 +38,7 @@ export function InvoiceForm({ folder, defaultName, defaultEmail, images, trigger
       clientEmail: clientEmail.trim(),
       clientCountry: clientCountry.trim(),
       ref: invoiceRef.trim(),
+      date: invoiceDate,
       image: selectedImage,
       discount: discount.trim(),
       showBank: String(showBankDetails),
@@ -99,6 +106,15 @@ export function InvoiceForm({ folder, defaultName, defaultEmail, images, trigger
                   value={invoiceRef}
                   onChange={(e) => setInvoiceRef(e.target.value)}
                   placeholder="e.g. RF012026"
+                  className="border-input bg-background ring-offset-background flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Invoice Date</label>
+                <input
+                  type="date"
+                  value={invoiceDate}
+                  onChange={(e) => setInvoiceDate(e.target.value)}
                   className="border-input bg-background ring-offset-background flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 />
               </div>
