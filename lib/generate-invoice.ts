@@ -174,22 +174,21 @@ export async function generateInvoicePdf({
     doc.moveTo(margin, y).lineTo(pageW - margin, y).strokeColor("#DDDDDD").lineWidth(0.5).stroke()
     y += 8
 
-    // ── Table rows: group by (folder or editingType) + price, so mixed rates split into separate rows ──
+    // ── Table rows: group by editingType (single folder) or by folder (multi-folder) ──
     const isMultiFolder = folderPayloads && folderPayloads.length > 1
     const groups: Record<string, { label: string; entries: InvoiceEntry[]; subtotal: number; notes?: string }> = {}
 
     const addToGroup = (base: string, entry: InvoiceEntry) => {
-      const key = `${base}\u0000${entry.price}`
-      if (!groups[key]) {
-        groups[key] = {
+      if (!groups[base]) {
+        groups[base] = {
           label: base,
           entries: [],
           subtotal: 0,
           notes: isMultiFolder ? folderPayloads!.find((f) => f.name === base)?.notes || "" : "",
         }
       }
-      groups[key].entries.push(entry)
-      groups[key].subtotal += entry.price
+      groups[base].entries.push(entry)
+      groups[base].subtotal += entry.price
     }
 
     if (isMultiFolder) {
@@ -205,6 +204,12 @@ export async function generateInvoicePdf({
       const count = group.entries.length
       const rate = count > 0 ? group.subtotal / count : 0
       const rowY = y
+
+      // Count files per unit price so mixed rates show an accurate breakdown
+      const priceCounts = new Map<number, number>()
+      for (const e of group.entries) priceCounts.set(e.price, (priceCounts.get(e.price) ?? 0) + 1)
+      const priceLines = [...priceCounts.entries()].sort((a, b) => b[0] - a[0] || a[1] - b[1])
+      const uniformRate = priceLines.length === 1
 
       // Thumbnail: use per-folder thumbnail or fallback
       const folderThumb = isMultiFolder ? (thumbBuffers[group.label] ?? singleThumbnail) : singleThumbnail
@@ -238,13 +243,21 @@ export async function generateInvoicePdf({
         y = doc.y + 4
       }
 
-      // Rate x count
-      doc.fontSize(9).font("Helvetica").fillColor("#444444")
-      doc.text(`$${fmtMoney(rate)}*${count}`, colSubtotal, rowY, { width: 80, align: "right" })
+      // Rate x count, or per-price breakdown when rates are mixed
+      if (uniformRate) {
+        doc.fontSize(9).font("Helvetica").fillColor("#444444")
+        doc.text(`$${fmtMoney(rate)}*${count}`, colSubtotal, rowY, { width: 80, align: "right" })
+      } else {
+        doc.fontSize(8).font("Helvetica").fillColor("#444444")
+        priceLines.forEach(([price, c], idx) => {
+          doc.text(`${c}*$${fmtMoney(price)}`, colSubtotal, rowY + idx * 9, { width: 80, align: "right" })
+        })
+      }
 
       // Subtotal
       doc.fontSize(10).font("Helvetica-Bold").fillColor("#222222")
-      doc.text(`$${group.subtotal.toFixed(2)}`, colSubtotal, y - 14, { width: 80, align: "right" })
+      const subtotalY = uniformRate ? y - 14 : rowY + priceLines.length * 9
+      doc.text(`$${group.subtotal.toFixed(2)}`, colSubtotal, subtotalY, { width: 80, align: "right" })
 
       y += 6
 
