@@ -16,6 +16,11 @@ type FolderPayload = {
   notes: string
 }
 
+function fmtMoney(n: number) {
+  const s = n.toFixed(2)
+  return s.replace(/\.?0+$/, "")
+}
+
 async function fetchThumb(url: string): Promise<Buffer | null> {
   if (!url) return null
   try {
@@ -169,24 +174,28 @@ export async function generateInvoicePdf({
     doc.moveTo(margin, y).lineTo(pageW - margin, y).strokeColor("#DDDDDD").lineWidth(0.5).stroke()
     y += 8
 
-    // ── Table rows: group by editingType (single folder) or by folder (multi-folder) ──
+    // ── Table rows: group by (folder or editingType) + price, so mixed rates split into separate rows ──
     const isMultiFolder = folderPayloads && folderPayloads.length > 1
-    const groups: Record<string, { entries: InvoiceEntry[]; subtotal: number; notes?: string }> = {}
+    const groups: Record<string, { label: string; entries: InvoiceEntry[]; subtotal: number; notes?: string }> = {}
+
+    const addToGroup = (base: string, entry: InvoiceEntry) => {
+      const key = `${base}\u0000${entry.price}`
+      if (!groups[key]) {
+        groups[key] = {
+          label: base,
+          entries: [],
+          subtotal: 0,
+          notes: isMultiFolder ? folderPayloads!.find((f) => f.name === base)?.notes || "" : "",
+        }
+      }
+      groups[key].entries.push(entry)
+      groups[key].subtotal += entry.price
+    }
 
     if (isMultiFolder) {
-      for (const entry of entries) {
-        const key = entry.folder || "Unknown"
-        if (!groups[key]) groups[key] = { entries: [], subtotal: 0, notes: folderPayloads!.find((f) => f.name === key)?.notes || "" }
-        groups[key].entries.push(entry)
-        groups[key].subtotal += entry.price
-      }
+      for (const entry of entries) addToGroup(entry.folder || "Unknown", entry)
     } else {
-      for (const entry of entries) {
-        const key = entry.editingType
-        if (!groups[key]) groups[key] = { entries: [], subtotal: 0 }
-        groups[key].entries.push(entry)
-        groups[key].subtotal += entry.price
-      }
+      for (const entry of entries) addToGroup(entry.editingType, entry)
     }
 
     const groupKeys = Object.keys(groups)
@@ -198,7 +207,7 @@ export async function generateInvoicePdf({
       const rowY = y
 
       // Thumbnail: use per-folder thumbnail or fallback
-      const folderThumb = isMultiFolder ? (thumbBuffers[key] ?? singleThumbnail) : singleThumbnail
+      const folderThumb = isMultiFolder ? (thumbBuffers[group.label] ?? singleThumbnail) : singleThumbnail
       if (folderThumb) {
         try {
           doc.image(folderThumb, margin, rowY, { width: thumbW, height: thumbH })
@@ -217,9 +226,9 @@ export async function generateInvoicePdf({
       doc.font("Helvetica-Bold").text(`${count} x images`, colTitle, rowY)
       y += 14
 
-      // Description: editing type
+      // Description: folder / editing type
       doc.fontSize(9).font("Helvetica").fillColor("#555555")
-      doc.text(key, colTitle, rowY + 14)
+      doc.text(group.label, colTitle, rowY + 14)
       y += 14
 
       // Per-folder notes
@@ -231,11 +240,11 @@ export async function generateInvoicePdf({
 
       // Rate x count
       doc.fontSize(9).font("Helvetica").fillColor("#444444")
-      doc.text(`$${rate.toFixed(0)}*${count}`, colSubtotal, rowY, { width: 80, align: "right" })
+      doc.text(`$${fmtMoney(rate)}*${count}`, colSubtotal, rowY, { width: 80, align: "right" })
 
       // Subtotal
       doc.fontSize(10).font("Helvetica-Bold").fillColor("#222222")
-      doc.text(`$${group.subtotal.toFixed(0)}`, colSubtotal, y - 14, { width: 80, align: "right" })
+      doc.text(`$${group.subtotal.toFixed(2)}`, colSubtotal, y - 14, { width: 80, align: "right" })
 
       y += 6
 
