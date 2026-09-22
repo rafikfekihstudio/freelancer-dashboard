@@ -12,6 +12,7 @@ type InvoiceEntry = {
 
 type FolderPayload = {
   name: string
+  label?: string
   thumbnail: string
   notes: string
 }
@@ -176,15 +177,17 @@ export async function generateInvoicePdf({
 
     // ── Table rows: group by editingType (single folder) or by folder (multi-folder) ──
     const isMultiFolder = folderPayloads && folderPayloads.length > 1
-    const groups: Record<string, { label: string; entries: InvoiceEntry[]; subtotal: number; notes?: string }> = {}
+    const groups: Record<string, { name: string; label: string; entries: InvoiceEntry[]; subtotal: number; notes?: string }> = {}
 
     const addToGroup = (base: string, entry: InvoiceEntry) => {
       if (!groups[base]) {
+        const payload = isMultiFolder ? folderPayloads!.find((f) => f.name === base) : undefined
         groups[base] = {
-          label: base,
+          name: base,
+          label: payload?.label || base,
           entries: [],
           subtotal: 0,
-          notes: isMultiFolder ? folderPayloads!.find((f) => f.name === base)?.notes || "" : "",
+          notes: payload?.notes || "",
         }
       }
       groups[base].entries.push(entry)
@@ -212,7 +215,7 @@ export async function generateInvoicePdf({
       const uniformRate = priceLines.length === 1
 
       // Thumbnail: use per-folder thumbnail or fallback
-      const folderThumb = isMultiFolder ? (thumbBuffers[group.label] ?? singleThumbnail) : singleThumbnail
+      const folderThumb = isMultiFolder ? (thumbBuffers[group.name] ?? singleThumbnail) : singleThumbnail
       if (folderThumb) {
         try {
           doc.image(folderThumb, margin, rowY, { width: thumbW, height: thumbH })

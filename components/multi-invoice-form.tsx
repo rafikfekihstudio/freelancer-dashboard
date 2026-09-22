@@ -33,6 +33,7 @@ export function MultiInvoiceForm({ folders, trigger }: Props) {
   const [open, setOpen] = useState(false)
   const [selectedFolders, setSelectedFolders] = useState<string[]>([])
   const [folderDetails, setFolderDetails] = useState<Record<string, FolderDetails>>({})
+  const [folderLabels, setFolderLabels] = useState<Record<string, string>>({})
   const [expandedFolder, setExpandedFolder] = useState<string | null>(null)
   const [clientName, setClientName] = useState("")
   const [clientCompany, setClientCompany] = useState("")
@@ -77,6 +78,7 @@ export function MultiInvoiceForm({ folders, trigger }: Props) {
       const detail = folderDetails[name] ?? { thumbnail: "", notes: "" }
       return {
         name,
+        label: (folderLabels[name] || "").trim() || name,
         thumbnail: detail.thumbnail,
         notes: detail.notes,
       }
@@ -138,7 +140,7 @@ export function MultiInvoiceForm({ folders, trigger }: Props) {
                           onClick={(e) => e.stopPropagation()}
                           className="h-3.5 w-3.5 rounded"
                         />
-                        <span className="flex-1 text-sm truncate">{f.name}</span>
+                        <span className="flex-1 text-sm truncate">{folderLabels[f.name] || f.name}</span>
                         <span className="text-xs text-muted-foreground">{f.entries.length} files</span>
                         <span className="text-xs text-muted-foreground">${folderTotal.toFixed(2)}</span>
                         {isSelected && (
@@ -153,6 +155,15 @@ export function MultiInvoiceForm({ folders, trigger }: Props) {
                       </div>
                       {isSelected && isExpanded && (
                         <div className="border-t px-3 py-3 space-y-3 bg-muted/20">
+                          <div>
+                            <label className="text-xs font-medium text-muted-foreground mb-1 block">Name on invoice</label>
+                            <input
+                              value={folderLabels[f.name] ?? f.name}
+                              onChange={(e) => setFolderLabels((prev) => ({ ...prev, [f.name]: e.target.value }))}
+                              placeholder={f.name}
+                              className="border-input bg-background ring-offset-background flex w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                            />
+                          </div>
                           <div>
                             <label className="text-xs font-medium text-muted-foreground mb-1 block">Thumbnail</label>
                             <div className="flex gap-2 flex-wrap">
