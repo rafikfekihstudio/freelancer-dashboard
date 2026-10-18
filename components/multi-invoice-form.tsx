@@ -17,6 +17,8 @@ type FolderData = {
 type FolderDetails = {
   thumbnail: string
   notes: string
+  feeLabel: string
+  feeAmount: string
 }
 
 type Props = {
@@ -53,6 +55,10 @@ export function MultiInvoiceForm({ folders, trigger }: Props) {
     return selectedFolderData.reduce((s, f) => s + f.entries.reduce((s2, e) => s2 + e.price, 0), 0)
   }, [selectedFolderData])
 
+  const totalFees = useMemo(() => {
+    return selectedFolderData.reduce((s, f) => s + (Number(folderDetails[f.name]?.feeAmount) || 0), 0)
+  }, [selectedFolderData, folderDetails])
+
   function toggleFolder(name: string) {
     setSelectedFolders((prev) =>
       prev.includes(name) ? prev.filter((f) => f !== name) : [...prev, name]
@@ -75,12 +81,14 @@ export function MultiInvoiceForm({ folders, trigger }: Props) {
     setSubmitting(true)
 
     const folderPayload = selectedFolders.map((name) => {
-      const detail = folderDetails[name] ?? { thumbnail: "", notes: "" }
+      const detail = folderDetails[name] ?? { thumbnail: "", notes: "", feeLabel: "", feeAmount: "" }
       return {
         name,
         label: (folderLabels[name] || "").trim() || name,
         thumbnail: detail.thumbnail,
         notes: detail.notes,
+        feeLabel: detail.feeLabel.trim(),
+        feeAmount: Number(detail.feeAmount) || 0,
       }
     })
 
@@ -115,7 +123,7 @@ export function MultiInvoiceForm({ folders, trigger }: Props) {
           <div className="bg-card border rounded-lg shadow-xl w-full max-w-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold">Generate Invoice</h2>
             <p className="text-xs text-muted-foreground">
-              {selectedFolders.length} folder{selectedFolders.length !== 1 && "s"} selected &middot; {selectedFolderData.reduce((s, f) => s + f.entries.length, 0)} files &middot; ${total.toFixed(2)}
+              {selectedFolders.length} folder{selectedFolders.length !== 1 && "s"} selected &middot; {selectedFolderData.reduce((s, f) => s + f.entries.length, 0)} files &middot; ${(total + totalFees).toFixed(2)}{totalFees > 0 ? ` (includes $${totalFees.toFixed(2)} fees)` : ""}
             </p>
 
             {/* Folder selection */}
@@ -128,7 +136,7 @@ export function MultiInvoiceForm({ folders, trigger }: Props) {
                 {folders.map((f) => {
                   const isSelected = selectedFolders.includes(f.name)
                   const isExpanded = expandedFolder === f.name
-                  const detail = folderDetails[f.name] ?? { thumbnail: "", notes: "" }
+                  const detail = folderDetails[f.name] ?? { thumbnail: "", notes: "", feeLabel: "", feeAmount: "" }
                   const folderTotal = f.entries.reduce((s, e) => s + e.price, 0)
                   return (
                     <div key={f.name} className="border rounded-md overflow-hidden">
@@ -194,6 +202,29 @@ export function MultiInvoiceForm({ folders, trigger }: Props) {
                               rows={2}
                               className="border-input bg-background ring-offset-background flex w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none resize-none"
                             />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs font-medium text-muted-foreground mb-1 block">Fee label</label>
+                              <input
+                                value={detail.feeLabel}
+                                onChange={(e) => updateFolderDetail(f.name, "feeLabel", e.target.value)}
+                                placeholder="e.g. Rush fee"
+                                className="border-input bg-background ring-offset-background flex w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs font-medium text-muted-foreground mb-1 block">Fee amount ($)</label>
+                              <input
+                                value={detail.feeAmount}
+                                onChange={(e) => updateFolderDetail(f.name, "feeAmount", e.target.value)}
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                placeholder="0"
+                                className="border-input bg-background ring-offset-background flex w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                              />
+                            </div>
                           </div>
                           {/* File list summary */}
                           <div className="text-xs text-muted-foreground">

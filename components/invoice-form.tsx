@@ -25,6 +25,8 @@ export function InvoiceForm({ folder, defaultName, defaultEmail, images, trigger
   const [invoiceDate, setInvoiceDate] = useState(todayISO())
   const [selectedImage, setSelectedImage] = useState<string>(images.find((i) => i.src)?.src ?? "")
   const [discount, setDiscount] = useState("")
+  const [feeLabel, setFeeLabel] = useState("")
+  const [feeAmount, setFeeAmount] = useState("")
   const [showBankDetails, setShowBankDetails] = useState(true)
   const [submitting, setSubmitting] = useState(false)
 
@@ -41,6 +43,8 @@ export function InvoiceForm({ folder, defaultName, defaultEmail, images, trigger
       date: invoiceDate,
       image: selectedImage,
       discount: discount.trim(),
+      feeLabel: feeLabel.trim(),
+      feeAmount: feeAmount.trim(),
       showBank: String(showBankDetails),
     })
     const link = document.createElement("a")
@@ -129,6 +133,29 @@ export function InvoiceForm({ folder, defaultName, defaultEmail, images, trigger
                   placeholder="0"
                   className="border-input bg-background ring-offset-background flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium">Fee label</label>
+                  <input
+                    value={feeLabel}
+                    onChange={(e) => setFeeLabel(e.target.value)}
+                    placeholder="e.g. Rush fee"
+                    className="border-input bg-background ring-offset-background flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Fee amount ($)</label>
+                  <input
+                    value={feeAmount}
+                    onChange={(e) => setFeeAmount(e.target.value)}
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0"
+                    className="border-input bg-background ring-offset-background flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  />
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <input

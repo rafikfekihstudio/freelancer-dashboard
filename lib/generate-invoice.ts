@@ -15,6 +15,8 @@ type FolderPayload = {
   label?: string
   thumbnail: string
   notes: string
+  feeLabel?: string
+  feeAmount?: number
 }
 
 function fmtMoney(n: number) {
@@ -121,7 +123,12 @@ export async function generateInvoicePdf({
     doc.fontSize(12).font("Helvetica-Bold").fillColor("#222222")
     doc.text(invoiceDateStr, dateX, dateY + 14)
 
-    const finalTotal = total - discount
+    const fees = (folderPayloads ?? [])
+      .filter((f) => (f.feeAmount || 0) > 0)
+      .map((f) => ({ label: (f.feeLabel || "Fee").trim(), amount: f.feeAmount as number, folder: f.label || f.name }))
+    const totalFees = fees.reduce((s, f) => s + f.amount, 0)
+
+    const finalTotal = total + totalFees - discount
 
     // ── Amount Due (right side, below invoice title) ──
     const amountX = pageW - margin - 120
@@ -284,6 +291,14 @@ export async function generateInvoicePdf({
     doc.text("Subtotal", margin, y)
     doc.text(`$${total.toFixed(2)}`, colSubtotal, y, { width: 80, align: "right" })
     y += 22
+
+    for (const fee of fees) {
+      doc.fontSize(11).font("Helvetica").fillColor("#2E7D32")
+      const feeName = fees.length > 1 || isMultiFolder ? `${fee.label} (${fee.folder})` : fee.label
+      doc.text(feeName, margin, y)
+      doc.text(`+$${fee.amount.toFixed(2)}`, colSubtotal, y, { width: 80, align: "right" })
+      y += 20
+    }
 
     if (discount > 0) {
       doc.fontSize(11).font("Helvetica").fillColor("#CC3333")

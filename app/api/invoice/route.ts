@@ -9,6 +9,8 @@ type FolderPayload = {
   name: string
   thumbnail: string
   notes: string
+  feeLabel?: string
+  feeAmount?: number
 }
 
 export async function GET(req: Request) {
@@ -23,12 +25,26 @@ export async function GET(req: Request) {
 
   if (foldersJson) {
     try {
-      folderPayloads = JSON.parse(foldersJson)
+      const parsed = JSON.parse(foldersJson)
+      if (!Array.isArray(parsed)) throw new Error("not an array")
+      folderPayloads = parsed.map((f) => ({
+        name: String(f?.name ?? ""),
+        thumbnail: String(f?.thumbnail ?? ""),
+        notes: String(f?.notes ?? ""),
+        feeLabel: String(f?.feeLabel ?? "").trim().slice(0, 60),
+        feeAmount: Math.max(0, Number(f?.feeAmount) || 0),
+      }))
     } catch {
       return new NextResponse("Invalid folders param", { status: 400 })
     }
   } else if (folder) {
-    folderPayloads = [{ name: folder, thumbnail: searchParams.get("image") ?? "", notes: "" }]
+    folderPayloads = [{
+      name: folder,
+      thumbnail: searchParams.get("image") ?? "",
+      notes: "",
+      feeLabel: (searchParams.get("feeLabel") ?? "").slice(0, 60),
+      feeAmount: Math.max(0, Number(searchParams.get("feeAmount")) || 0),
+    }]
   }
 
   if (folderPayloads.length === 0) return new NextResponse("Missing folder(s)", { status: 400 })
