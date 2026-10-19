@@ -17,6 +17,7 @@ import { FolderStatusBadge } from "@/components/folder-status-badge"
 import { FolderTypeBadge } from "@/components/folder-type-badge"
 import { InvoiceForm } from "@/components/invoice-form"
 import { MultiInvoiceForm } from "@/components/multi-invoice-form"
+import { InlinePrice } from "@/components/inline-price"
 import { listWorkTypes } from "@/lib/actions/work-types"
 import { FolderSection } from "@/components/folder-section"
 
@@ -76,6 +77,7 @@ export default async function RetoucherPage({
         hirerId: workEntries.hirerId,
         hirerName: users.name,
         hirerEmail: users.email,
+        createdAt: workEntries.createdAt,
       })
       .from(workEntries)
       .leftJoin(users, eq(workEntries.hirerId, users.id))
@@ -103,6 +105,46 @@ export default async function RetoucherPage({
     .get()
 
   const folders = [...new Set(entries.map((e) => e.folder).filter(Boolean))] as string[]
+
+  function parseDate(v?: string | null): Date | null {
+    if (!v || v.startsWith("datetime(")) return null
+    const d = new Date(v)
+    return Number.isNaN(d.getTime()) ? null : d
+  }
+
+  function fmtDate(v?: string | null): string | null {
+    const d = parseDate(v)
+    if (!d) return null
+    return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`
+  }
+
+  const folderStartDates: Record<string, string | null> = {}
+  for (const f of folders) {
+    const dates = entries.filter((e) => e.folder === f).map((e) => parseDate(e.createdAt)).filter(Boolean) as Date[]
+    folderStartDates[f] = dates.length > 0 ? fmtDate(new Date(Math.min(...dates.map((d) => d.getTime()))).toISOString()) : null
+  }
+
+  const monthOf = (f: string): string | null => {
+    const v = entries.filter((e) => e.folder === f).map((e) => parseDate(e.createdAt)).filter(Boolean) as Date[]
+    if (v.length === 0) return null
+    const d = new Date(Math.min(...v.map((x) => x.getTime())))
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+  }
+
+  const monthGroups: { key: string | null; label: string | null; folders: string[] }[] = []
+  for (const f of folders) {
+    const key = monthOf(f)
+    let g = monthGroups.find((x) => x.key === key)
+    if (!g) {
+      const label = key
+        ? new Date(Number(key.slice(0, 4)), Number(key.slice(5, 7)) - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" })
+        : null
+      g = { key, label, folders: [] }
+      monthGroups.push(g)
+    }
+    g.folders.push(f)
+  }
+  monthGroups.sort((a, b) => (b.key ?? "").localeCompare(a.key ?? ""))
 
   const folderData = folders.map((f) => ({
     name: f,
@@ -152,10 +194,29 @@ export default async function RetoucherPage({
         <TableSection entries={entries} showPayment />
       ) : (
         <>
-          {folders.map((folder, idx) => {
-            const folderEntries = entries.filter((e) => e.folder === folder)
-            return <FolderSection key={folder} folder={folder} entries={folderEntries} note={noteMap[folder] ?? null} hirers={hirers} allTypes={allTypes} defaultOpen={idx < 3} />
-          })}
+          {monthGroups.map((group, gi) => (
+            <section key={group.key ?? "unknown"} className="space-y-4">
+              {group.label && (
+                <h2 className="text-sm font-semibold text-muted-foreground border-b pb-1">{group.label}</h2>
+              )}
+              {group.folders.map((folder) => {
+                const folderEntries = entries.filter((e) => e.folder === folder)
+                const globalIdx = monthGroups.slice(0, gi).reduce((s, g) => s + g.folders.length, 0) + group.folders.indexOf(folder)
+                return (
+                  <FolderSection
+                    key={folder}
+                    folder={folder}
+                    entries={folderEntries}
+                    note={noteMap[folder] ?? null}
+                    hirers={hirers}
+                    allTypes={allTypes}
+                    defaultOpen={globalIdx < 3}
+                    startDate={folderStartDates[folder]}
+                  />
+                )
+              })}
+            </section>
+          ))}
           {entries.filter((e) => !e.folder).length > 0 && (
             <section className="space-y-2">
               <h2 className="text-lg font-semibold border-b pb-1">Uncategorized</h2>
@@ -205,7 +266,7 @@ function TableSection({ entries, showPayment }: { entries: any[]; showPayment?: 
               </td>
               <td className="px-3 py-2 text-muted-foreground">{entry.originalFilename}</td>
               <td className="px-3 py-2">{entry.editingType}</td>
-              <td className="px-3 py-2">${entry.price.toFixed(2)}</td>
+              <td className="px-3 py-2"><InlinePrice entryId={entry.id} current={entry.price} /></td>
               <td className="px-3 py-2">
                 <InlineStatus
                   entryId={entry.id}

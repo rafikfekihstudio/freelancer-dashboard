@@ -10,6 +10,7 @@ import { FolderStatusBadge } from "@/components/folder-status-badge"
 import { FolderTypeBadge } from "@/components/folder-type-badge"
 import { InvoiceForm } from "@/components/invoice-form"
 import { CollapsibleSection } from "@/components/collapsible-section"
+import { InlinePrice } from "@/components/inline-price"
 
 function Thumb({ src, alt }: { src?: string | null; alt: string }) {
   if (!src) return <div className="h-10 w-10 rounded bg-muted" />
@@ -36,6 +37,7 @@ export function FolderSection({
   hirers,
   allTypes,
   defaultOpen = true,
+  startDate,
 }: {
   folder: string
   entries: any[]
@@ -43,6 +45,7 @@ export function FolderSection({
   hirers: { id: number; name: string; email: string }[]
   allTypes: string[]
   defaultOpen?: boolean
+  startDate?: string | null
 }) {
   const ps = folderPaymentStatus(entries)
   const ws = folderWorkStatus(entries)
@@ -59,6 +62,7 @@ export function FolderSection({
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-semibold">{folder} <span className="text-sm font-normal text-muted-foreground">({entries.length})</span></h2>
+            {startDate && <span className="text-xs text-muted-foreground font-normal">{startDate}</span>}
             <Link href={`/retoucher/new?folder=${encodeURIComponent(folder)}`} className="text-muted-foreground hover:text-foreground text-lg leading-none" title="Add to this folder">+</Link>
           </div>
           <FolderHirerSelect folder={folder} hirers={hirers} currentHirerId={currentHirerId} currentHirerName={currentHirerName} />
@@ -108,7 +112,7 @@ export function FolderSection({
                 </td>
                 <td className="px-3 py-2 text-muted-foreground">{entry.originalFilename}</td>
                 <td className="px-3 py-2">{entry.editingType}</td>
-                <td className="px-3 py-2">${entry.price.toFixed(2)}</td>
+                <td className="px-3 py-2"><InlinePrice entryId={entry.id} current={entry.price} /></td>
                 <td className="px-3 py-2">
                   <InlineStatus
                     entryId={entry.id}
