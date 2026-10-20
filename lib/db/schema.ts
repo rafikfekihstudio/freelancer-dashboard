@@ -1,5 +1,7 @@
 import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core"
 
+const nowISO = () => new Date().toISOString()
+
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   email: text("email").notNull().unique(),
@@ -9,7 +11,7 @@ export const users = sqliteTable("users", {
     enum: ["admin", "retoucher", "hirer"],
   }).notNull(),
   avatarUrl: text("avatar_url"),
-  createdAt: text("created_at").default("datetime('now')"),
+  createdAt: text("created_at").$defaultFn(nowISO),
 })
 
 export const workEntries = sqliteTable("work_entries", {
@@ -35,8 +37,8 @@ export const workEntries = sqliteTable("work_entries", {
   status: text("status", { enum: ["in-progress", "completed"] })
     .notNull()
     .default("in-progress"),
-  createdAt: text("created_at").default("datetime('now')"),
-  updatedAt: text("updated_at").default("datetime('now')"),
+  createdAt: text("created_at").$defaultFn(nowISO),
+  updatedAt: text("updated_at").$defaultFn(nowISO),
 })
 
 export const payments = sqliteTable("payments", {
@@ -47,7 +49,7 @@ export const payments = sqliteTable("payments", {
   amount: real("amount").notNull(),
   paidAt: text("paid_at").notNull(),
   notes: text("notes"),
-  createdAt: text("created_at").default("datetime('now')"),
+  createdAt: text("created_at").$defaultFn(nowISO),
 })
 
 export const notifications = sqliteTable("notifications", {
@@ -58,13 +60,13 @@ export const notifications = sqliteTable("notifications", {
   message: text("message").notNull(),
   link: text("link"),
   read: integer("read", { mode: "boolean" }).notNull().default(false),
-  createdAt: text("created_at").default("datetime('now')"),
+  createdAt: text("created_at").$defaultFn(nowISO),
 })
 
 export const workTypes = sqliteTable("work_types", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull().unique(),
-  createdAt: text("created_at").default("datetime('now')"),
+  createdAt: text("created_at").$defaultFn(nowISO),
 })
 
 export const folderNotes = sqliteTable("folder_notes", {
@@ -72,8 +74,8 @@ export const folderNotes = sqliteTable("folder_notes", {
   folder: text("folder").notNull(),
   userId: integer("user_id").notNull().references(() => users.id),
   content: text("content").notNull(),
-  createdAt: text("created_at").default("datetime('now')"),
-  updatedAt: text("updated_at").default("datetime('now')"),
+  createdAt: text("created_at").$defaultFn(nowISO),
+  updatedAt: text("updated_at").$defaultFn(nowISO),
 })
 
 export const comments = sqliteTable("comments", {
@@ -85,5 +87,5 @@ export const comments = sqliteTable("comments", {
     .notNull()
     .references(() => users.id),
   content: text("content").notNull(),
-  createdAt: text("created_at").default("datetime('now')"),
+  createdAt: text("created_at").$defaultFn(nowISO),
 })
